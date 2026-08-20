@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard BTVN Buổi 1 — Nhóm 6 | AI Agent K1</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg-primary:#f5f6f8; --bg-card:#ffffff; --bg-header:#1b2340;
+  --text-primary:#1f2430; --text-secondary:#6b7280; --text-on-dark:#ffffff;
+  --c1:#4C72B0; --c2:#DD8452; --c3:#55A868; --c4:#C44E52; --c5:#8172B3; --c6:#937860; --c7:#64B5CD;
+  --positive:#2f9e5e; --negative:#d1495b; --warn:#e0a62e; --neutral:#6c757d;
+  --gap:16px; --radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.5;}
+.container{max-width:1360px;margin:0 auto;padding:var(--gap);}
+header.top{background:linear-gradient(135deg,#1b2340,#2c3768);color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);}
+header.top h1{font-size:21px;font-weight:700;margin-bottom:4px;}
+header.top p{font-size:13px;color:rgba(255,255,255,.75);}
+.badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.badge{font-size:12px;background:rgba(255,255,255,.12);padding:5px 10px;border-radius:20px;color:#fff;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:4px solid var(--c1);}
+.kpi-card.c2{border-left-color:var(--c3);}
+.kpi-card.c3{border-left-color:var(--c2);}
+.kpi-card.c4{border-left-color:var(--c5);}
+.kpi-card.c5{border-left-color:var(--positive);}
+.kpi-card.c6{border-left-color:var(--negative);}
+.kpi-label{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.kpi-value{font-size:26px;font-weight:700;}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+
+.section-title{font-size:15px;font-weight:700;margin:26px 0 12px;display:flex;align-items:center;gap:8px;}
+.section-title .tag{font-size:11px;font-weight:600;background:#eef1ff;color:#3b4bb8;padding:2px 8px;border-radius:12px;}
+
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.chart-container h3{font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px;}
+.chart-container canvas{max-height:280px;}
+.chart-container.wide{grid-column:span 2;}
+@media (max-width:820px){.chart-container.wide{grid-column:span 1;}}
+
+.insight-box{background:#fff8ec;border:1px solid #f1dfb0;border-radius:var(--radius);padding:14px 18px;font-size:13px;color:#7a5b16;margin-bottom:var(--gap);}
+.insight-box b{color:#5c4310;}
+
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.showcase-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:3px solid var(--positive);}
+.showcase-card .name{font-weight:700;font-size:14px;margin-bottom:2px;}
+.showcase-card .ma{font-size:11px;color:var(--text-secondary);margin-bottom:8px;}
+.showcase-card .desc{font-size:12.5px;color:#374151;margin-bottom:10px;min-height:64px;}
+.showcase-card a{font-size:12px;color:#3b4bb8;text-decoration:none;font-weight:600;}
+.showcase-card a:hover{text-decoration:underline;}
+.showcase-card .noaccess{font-size:12px;color:var(--text-secondary);font-style:italic;}
+
+.table-section{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow-x:auto;margin-bottom:var(--gap);}
+.table-section h3{font-size:13px;font-weight:700;margin-bottom:12px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.filters select, .filters input{padding:7px 10px;border:1px solid #dcdfe6;border-radius:6px;font-size:12.5px;background:#fff;}
+.filters input{min-width:180px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table thead th{text-align:left;padding:9px 10px;border-bottom:2px solid #e5e7eb;color:var(--text-secondary);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;}
+.data-table thead th:hover{color:var(--text-primary);background:#f8f9fa;}
+.data-table tbody td{padding:8px 10px;border-bottom:1px solid #f1f2f4;vertical-align:top;}
+.data-table tbody tr:hover{background:#f8f9fb;}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.pill.tot{background:#e5f6ec;color:#1f8a4f;}
+.pill.bs{background:#fdeeee;color:#c3454f;}
+.pill.absent{background:#f1f2f4;color:#6b7280;}
+.pill.late{background:#fff3d9;color:#a8710c;}
+.pill.locked{background:#eee6fb;color:#6d3fbf;}
+.pill.none{background:#f1f2f4;color:#9aa0aa;}
+.loi-chip{display:inline-block;font-size:10.5px;background:#f3f4f6;color:#4b5563;padding:2px 6px;border-radius:5px;margin:1px 3px 1px 0;}
+.count-info{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
+.spcase-table td, .spcase-table th{padding:8px 10px;}
+
+footer{text-align:center;font-size:12px;color:var(--text-secondary);padding:20px 0;}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="top">
+    <h1>Dashboard BTVN Buổi 1 — Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</h1>
+    <p>Nguồn: sheet "Nhóm 6" + "NỘP BTVN" + "Điểm danh" · Phạm vi: chỉ Buổi 1 · Dữ liệu tính đến thời điểm chấm gần nhất</p>
+    <div class="badge-row">
+      <span class="badge">109 học viên</span>
+      <span class="badge">61 bài đã chấm</span>
+      <span class="badge">7 bài Hoàn thành tốt</span>
+      <span class="badge">Lỗi #1: thiếu Xưng hô (72%)</span>
+    </div>
+  </header>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Tổng học viên</div>
+      <div class="kpi-value" id="kpi-total">–</div>
+      <div class="kpi-sub">Nhóm 6</div>
+    </div>
+    <div class="kpi-card c2">
+      <div class="kpi-label">Điểm danh có mặt</div>
+      <div class="kpi-value" id="kpi-attend">–</div>
+      <div class="kpi-sub" id="kpi-attend-sub">–</div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-label">Đã nộp bài</div>
+      <div class="kpi-value" id="kpi-submit">–</div>
+      <div class="kpi-sub" id="kpi-submit-sub">–</div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-label">Đã chấm (feedback)</div>
+      <div class="kpi-value" id="kpi-graded">–</div>
+      <div class="kpi-sub" id="kpi-graded-sub">–</div>
+    </div>
+    <div class="kpi-card c5">
+      <div class="kpi-label">Hoàn thành tốt</div>
+      <div class="kpi-value" id="kpi-good">–</div>
+      <div class="kpi-sub" id="kpi-good-sub">trong số đã chấm</div>
+    </div>
+    <div class="kpi-card c6">
+      <div class="kpi-label">Cần bổ sung</div>
+      <div class="kpi-value" id="kpi-bad">–</div>
+      <div class="kpi-sub" id="kpi-bad-sub">trong số đã chấm</div>
+    </div>
+  </div>
+
+  <div class="insight-box" id="insight-main">
+    <b>Insight chính:</b> đang tính...
+  </div>
+
+  <div class="section-title">📊 Điểm danh &amp; tình trạng nộp bài <span class="tag">Buổi 1</span></div>
+  <div class="chart-row">
+    <div class="chart-container">
+      <h3>Điểm danh Buổi 1</h3>
+      <canvas id="chart-attend"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Tình trạng nộp BTVN 1</h3>
+      <canvas id="chart-submit"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Xếp loại trong số bài đã chấm</h3>
+      <canvas id="chart-grade"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">🔍 Lỗi thường gặp trong Instruction / minh chứng <span class="tag">54 bài Cần bổ sung</span></div>
+  <div class="chart-row">
+    <div class="chart-container wide">
+      <h3>Tần suất các lỗi (tính trên 54 bài "Cần bổ sung")</h3>
+      <canvas id="chart-errors"></canvas>
+    </div>
+  </div>
+  <div class="insight-box">
+    <b>Lỗi phổ biến nhất:</b> 39/54 bài (72%) thiếu mục <b>Xưng hô</b> trong Instruction — đa số Instruction chỉ dừng ở Vai trò + Quy tắc làm việc mà quên quy định trợ lý gọi học viên là gì / xưng gì.
+    Kế tiếp là thiếu <b>Thông tin về bản thân</b> (16 bài, 30%) và <b>Vai trò</b> chưa rõ (13 bài, 24%).
+    Về mặt minh chứng, lỗi hay gặp nhất là thiếu/sai <b>ảnh 5 – kết quả Notion</b> (6 bài) — nhiều bài dùng ảnh không phải kết quả thật do trợ lý tạo ra từ đúng câu lệnh giao việc.
+  </div>
+
+  <div class="section-title">🏆 Bài có Instruction &amp; cách giao việc AI chuẩn chỉnh để lớp tham khảo <span class="tag">7 bài Hoàn thành tốt</span></div>
+  <div class="showcase-grid" id="showcase-grid"></div>
+
+  <div class="section-title">⚠️ Trường hợp cần trợ giảng xử lý riêng</div>
+  <div class="table-section">
+    <table class="data-table spcase-table">
+      <thead><tr><th>Mã HV</th><th>Họ tên</th><th>Loại vấn đề</th><th>Ghi chú</th></tr></thead>
+      <tbody id="spcase-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title">📋 Danh sách chi tiết toàn bộ Nhóm 6 <span class="tag">109 học viên</span></div>
+  <div class="table-section">
+    <div class="filters">
+      <input type="text" id="f-search" placeholder="Tìm theo mã HV hoặc tên...">
+      <select id="f-diemdanh" onchange="applyFilters()">
+        <option value="all">Tất cả điểm danh</option>
+        <option value="Có mặt">Có mặt</option>
+        <option value="Vắng">Vắng</option>
+      </select>
+      <select id="f-tinhtrang" onchange="applyFilters()">
+        <option value="all">Tất cả tình trạng nộp</option>
+        <option value="Đã feedback">Đã feedback</option>
+        <option value="Đã nộp">Đã nộp (chưa chấm)</option>
+        <option value="Nộp chậm">Nộp chậm</option>
+        <option value="Chưa mở quyền truy cập">Chưa mở quyền truy cập</option>
+        <option value="none">Chưa nộp</option>
+      </select>
+      <select id="f-xeploai" onchange="applyFilters()">
+        <option value="all">Tất cả xếp loại</option>
+        <option value="Hoàn thành tốt">Hoàn thành tốt</option>
+        <option value="Cần bổ sung">Cần bổ sung</option>
+      </select>
+    </div>
+    <div class="count-info" id="table-count"></div>
+    <table class="data-table" id="main-table">
+      <thead><tr>
+        <th data-field="ma">Mã HV</th>
+        <th data-field="ten">Họ tên</th>
+        <th data-field="diemdanh">Điểm danh</th>
+        <th data-field="tinhtrang">Tình trạng nộp</th>
+        <th data-field="xeploai">Xếp loại</th>
+        <th>Lỗi Instruction / minh chứng</th>
+        <th>Bài làm</th>
+      </tr></thead>
+      <tbody id="main-table-body"></tbody>
+    </table>
+  </div>
+
+  <footer>Dashboard tạo tự động từ dữ liệu chấm BTVN Buổi 1 · Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</footer>
+</div>
+
+<script>
+const DATA = {"summary": {"total_students": 109, "diem_danh": {"Có mặt": 95, "Vắng": 14}, "tinh_trang_nop": {"Đã feedback": 62, "None": 43, "Đã nộp": 1, "Nộp chậm": 2, "Chưa mở quyền truy cập": 1}, "chua_nop_breakdown": {"Có mặt": 29, "Vắng": 14}, "xep_loai_da_cham": {"Cần bổ sung": 55, "Hoàn thành tốt": 7}, "loi_thuong_gap": {"Thiếu Xưng hô": 40, "Thiếu Thông tin về bản thân": 17, "Thiếu/không rõ Vai trò": 13, "Thiếu/chưa rõ Quy tắc làm việc": 12, "Thiếu/lỗi ảnh Notion (Ảnh 5)": 7, "Thiếu/lỗi ảnh Calendar (Ảnh 4)": 2, "Thiếu/lỗi ảnh giao việc (Ảnh 3)": 2, "Ảnh/Instruction bị cắt, thiếu bằng chứng chữ": 1}}, "students": [{"ma": "K481", "ten": "Nguyễn Quang Vinh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1wYUq6Lj4cZLl2AiM-k4gChhzn-fqzInUhVBiBAJ1qKU/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K482", "ten": "Trần Ngọc Thuý Vy", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1hViqatvfCFCqX8rot-TquWEbB17QTjCCNjW7JV2kNAg/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K483", "ten": "Nguyễn Thị Trà Mi", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Qs70hC-ijLkiaEHPpPkmvfb9QtfQlnM4HMdLY5M_uYI/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K484", "ten": "Trần Mỹ Linh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1j-oIsPpMcsp_v4BSr1JwsB3ZIdJaornREa9gj0mT8zk/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K485", "ten": "Thắng Nguyễn", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1w2s1yjl2ep3xAeA5YyUiX6RheRbP26RIaPSly_pBAPU/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K486", "ten": "NONG TU ANH", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Wb3GsUqvCC2FamtnrlQfPpt4hE0_tVKoc6WizuHylt0/edit?hl=vi&tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K487", "ten": "Võ Minh Thư", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/17AKyXNZ88fndy-KxABYpiTCH3M_3QpSA8Y-FeQjfAh0/edit?pli=1&tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K488", "ten": "Vũ Kim Ngân", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1d3kiyftX5_PHtmrDZWPjecg40JFVUOdSLZyHw0UdQ_s/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K489", "ten": "Nguyễn Ngọc Đạt", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1U29XCBdiTtcZ3e8Em0UIt0Aj5OH5fkAM3iDnNrhS0ds/edit?usp=sharings/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K490", "ten": "Lê Hoàng Vũ", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1jEzPMtFyxl--av9ccwNrZNvH3bCLXQCs_aKqHdKCN4g/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K491", "ten": "Yến Linh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1xVoQHab8ds1cxSuLdmCouRvw6C5UCfga3QzeI_RDBzo/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K492", "ten": "Vũ Văn Hưng", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K493", "ten": "Phạm Phương Anh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1RgzGzoPVW7cG4BLBvvklbj3sPBbu8HB0RpG1sIfgqxU/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K494", "ten": "Nguyễn Thị Hiên", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Wly8rCLsL3pzHdfWpmteKtxMc3yzNs1E56M0QwDvHfI/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K495", "ten": "Thuý Vy", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1d9FfLGs0juBpE5IGikzTN3HMcInERm-xRrsXLlDCmgU/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K496", "ten": "Trần Phương Loan", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Yr_N7y2agEpXCGgWuXwz-Gm8t2Ecug4JNhIJJvqsD2E/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò", "Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K497", "ten": "Hà Lương Thị Diệu My", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1NumS68hcxZJVRV09zjO_8pncVJXy5yohwLJF4KyaknM/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K498", "ten": "Lê Thị Vi", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K499", "ten": "Đỗ Thu Trang", "diemdanh": "Có mặt", "link": null, "tinhtrang": "Đã nộp", "xeploai": null, "loi": [], "link_note": "Mã trùng nhưng tên không khớp trong NỘP BTVN (form ghi \"Lê Thanh Phương\") — nghi mã nộp nhầm, cần trợ giảng xác minh thủ công."}, {"ma": "K500", "ten": "Nguyễn Ngọc Kim Chi", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K501", "ten": "Ngô Thị Thanh Thảo", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1okGpb9KI2oaP8gQJrRQfUoe1rtMgHN2GQas73Djotvo/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K502", "ten": "Cát Lợi", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1uG7X6ne0IccQqkELLaj4bra_eU9Zg2-QuqmOr8nUTXM/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu/lỗi ảnh Notion (Ảnh 5)"], "link_note": null}, {"ma": "K503", "ten": "Nguyễn Thị Ngọc Lan", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K504", "ten": "Chi Nguyễn", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K505", "ten": "Vũ Trần Minh Hoàng", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1z-9TdDJLEEuQa_dp71x2nzbB9_hBh3ypTstZJ6X3PP8/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K506", "ten": "Trần Bảo", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1avsaGKtCyDCYctJSNAz7wb6X3HeZyDv8F2kpyWdcpRQ/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K507", "ten": "Đào Mai Anh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1_sIqZJ6tEijz9hlLrFwnB308OokxpKfPu-7TXJjpvsk/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K508", "ten": "LÊ ĐỨC TÀI VŨ", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1AMYuGeESB88yUb10uNLjvh3zBiZoRfY8RcixTmVy4js/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân"], "link_note": null}, {"ma": "K509", "ten": "Nguyễn Ngọc Bảo Anh (Arius Nguyen)", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1FTa7ld_tgq0nxRUQyjU2WMq2s6tM6ipg/edit?usp=sharing&ouid=105378582029418280140&rtpof=true&sd=true", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K510", "ten": "Kiều Văn Lộc", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1KYSE92Q3co1lXe2ZkG944pcQaLwGkcNF0ZefsHhJ-N0/edit?usp=drivesdk", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K511", "ten": "Hường Nguyễn Thị", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1KqxTjtaraq1sfEIunnZeKDAfmTBP5kHw7r9w24HuFYQ/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K512", "ten": "Nguyễn Thị Thành", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K513", "ten": "Mai Hoài Phong", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1xbsOqbWNtEypQNgvE8Az7unop3zG2QLIRip-WOFU4jY/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân"], "link_note": null}, {"ma": "K514", "ten": "Thuong Nguyen", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Ioz4cYuiW25Jh0-LcIzicNLWuDPWAd2AlByau0MqB_o/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K515", "ten": "Nguyen Thuy Linh", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K516", "ten": "Bùi Minh Hiếu", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1prqEs2fQZwPfSFFkMrvVytK_CqPHBbue-ipYJR_cNQM/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K517", "ten": "Vũ Đình Lăng", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K518", "ten": "Bùi Hà", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1FywGyJseboWgiw7FWRKp2O7GO0jouyjhmPZQ9AOsFEU/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/lỗi ảnh Calendar (Ảnh 4)", "Thiếu/lỗi ảnh Notion (Ảnh 5)"], "link_note": null}, {"ma": "K519", "ten": "Tấn Phát Lê", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K520", "ten": "Nguyễn Thị Trà My", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K521", "ten": "Phương Ngọc Trung", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Ua-Dl_gh3qHwu9guEAgbft9BRyXPz09ofwSLzDtsbBQ/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K522", "ten": "bích hồng trương", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K523", "ten": "Lý Thị Thu Nga", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/12LCNzAtbNBvAI6QPJ1MbTWjTdEtX7MoWmXhQGN4giSE/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Thông tin về bản thân", "Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K524", "ten": "NGUYỄN THỊ ÁNH", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K525", "ten": "Nguyễn Thị Nhung", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K526", "ten": "Trần Hoàng Anh Thư", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Zu_cFglE8l1wOYEfvXmT6taEIzi9pqQxvgRt9J8SlRM/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K527", "ten": "Đinh Thị Mai Sương", "diemdanh": "Có mặt", "link": "https://drive.google.com/drive/u/0/folders/1NHK4sv6Iiq-ZoGfzCUocakLkkp5xvYb-", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò", "Thiếu/chưa rõ Quy tắc làm việc"], "link_note": null}, {"ma": "K528", "ten": "Phạm Thị Hằng", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K529", "ten": "Nguyễn Thuỷ Tiên", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K530", "ten": "Lưu Ngọc Thảo", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K531", "ten": "Đặng Thu Hoài", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K532", "ten": "Dung Do", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K533", "ten": "Nguyễn Thị Kim Anh", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K534", "ten": "Nguyễn Thị Thoa", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/19mHljEGShRmPz3TrI7TfT8MlOND4ng_u2jUIt3T7RWE/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K535", "ten": "Lê Công Hải", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K536", "ten": "Đặng Quí Lập", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K537", "ten": "Nguyễn Thị Ngọc Hà", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K538", "ten": "Nguyễn Minh Thu", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1NK0ymd1O1_iurE6ltX-6JRQsyRUrOVPgJWbVgniuFLo/edit?usp=sharing ", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K539", "ten": "Vương Thị Hoa", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K540", "ten": "Nguyễn Quang Trung", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1C14BJ0TRD3GCBfvqejAD-h2fD4mEflZzMK-YLNjbFdw/edit?usp=sharing", "tinhtrang": "Nộp chậm", "xeploai": null, "loi": [], "link_note": null}, {"ma": "K541", "ten": "Nguyễn Duy Trọng", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1yEfrP3-HEVae1LwX3W3z70luqJ1MzM_Vs38z7l0Zn38/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K542", "ten": "Huỳnh Nhân Khánh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1kNpjxchBhPe72esNBrupHhT4Ner6WNJNhEFERlYzXcg/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K543", "ten": "ĐỖ THỊ MINH TRANG", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1btN0Za2pvH9tvY8aewzBA1lxwdkQjJ5wVEHdwo4C_QI/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K544", "ten": "Võ thị huyền thư", "diemdanh": "Có mặt", "link": "https://ap.wps.com/cms/docs/d/cbTaqrp7emVSVmUx", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K545", "ten": "Đỗ Thu Phương", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K546", "ten": "Thảo Trinh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1YwH2SUnHupjKGiwVw_I8Gh27HVKqLkXsS4sxwNU-Qy4/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Thông tin về bản thân"], "link_note": null}, {"ma": "K547", "ten": "Đỗ Thuý Hằng", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1fY9v37wev9oNeiTIY_trmkl6m9kZ0ilF/edit?usp=sharing&ouid=117319773402175518136&rtpof=true&sd=true", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K548", "ten": "Lê Văn Hiếu", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K549", "ten": "Biện Thanh Thuỷ Tiên", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1g59uLrsi-ySAuGmQ_460tSwBZXJiP09A2tOlnSX_aVQ/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Hoàn thành tốt", "loi": [], "link_note": null}, {"ma": "K550", "ten": "Trần Thu Thủy", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1dJgkQtlEqOPZYhV-N9UKQpLxVMfeU1zKZ_DC5szvxRI/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò", "Thiếu/chưa rõ Quy tắc làm việc", "Thiếu/lỗi ảnh giao việc (Ảnh 3)"], "link_note": null}, {"ma": "K551", "ten": "Hoàng Oanh", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K552", "ten": "Hồ Lê Thảo Ngân", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1rcQ_FL0sX8Yoi8OpdnBbPYSqXWbtuSlckBoObAy3J1w/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò", "Thiếu/chưa rõ Quy tắc làm việc", "Thiếu/lỗi ảnh Notion (Ảnh 5)"], "link_note": null}, {"ma": "K553", "ten": "Ngô Ngọc Vũ", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1RKfzLRx4-mvBDuQ_BvcNuVazP9QuziLgYG3lhGCIxqA/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K554", "ten": "LÊ THỊ TRANG", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1-qboYeTW252sA1gIMXgTt1nFpauLh0TOeGgG-98xYzo/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu/lỗi ảnh Notion (Ảnh 5)"], "link_note": null}, {"ma": "K555", "ten": "Đỗ Bích Ngọc", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1UsC_0mj_WdM4OtTDpUG0ITG3PH4AlLjAa_M_tMiHNhQ/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K556", "ten": "Lưu Thanh Hương", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K557", "ten": "Nguyễn Đức Phương", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K558", "ten": "Nguyễn Thị Hồng Duyên", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1cz0aI3VDhBp1z34oViFPNGFvAUBC3ZtPqHDH159ee48/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân"], "link_note": null}, {"ma": "K559", "ten": "Lê Thị Thu Hương", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1XdSZ2ilempw31ywdombCXatDCSS4_03y8FNdiKW0O7U/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K560", "ten": "Đào Thị Chinh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1-NwDo2WvU3ObMeqXUu-KjIbvXdXAIdiiBTduI9SEODs/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò", "Thiếu/chưa rõ Quy tắc làm việc", "Thiếu/lỗi ảnh Notion (Ảnh 5)", "Thiếu/lỗi ảnh Calendar (Ảnh 4)"], "link_note": null}, {"ma": "K561", "ten": "Phuong", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K562", "ten": "Phạm Thị Minh Thư Thư", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K563", "ten": "Đỗ Thị Trà Mi", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K564", "ten": "ĐỖ PHÚ LỢI", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Bjqtm6DermJ0lzQvsW13c0pRJthHzKdv/edit", "tinhtrang": "Chưa mở quyền truy cập", "xeploai": null, "loi": [], "link_note": null}, {"ma": "K565", "ten": "Nguyễn Thị Bích Ngọc", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Oh6P5fZqEHpFB2HOyEgIoANTqRJLaEOwRNTyhbG66Sw/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K566", "ten": "Lê Thị Thanh Phương", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K567", "ten": "Lê Thị Thùy Miên", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1_xFfayJL7KsQgX9pNaOXGp04FFAKqVJIvgJmfnLJBrM/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K568", "ten": "Vũ Đức Anh Tuấn", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1kSoekF4AbtfEk2bVpzngNWQxt6ft1IClhqTIrSqRovA/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu/lỗi ảnh Notion (Ảnh 5)", "Thiếu/lỗi ảnh giao việc (Ảnh 3)"], "link_note": null}, {"ma": "K569", "ten": "Nguyễn thị lan anh", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K570", "ten": "Nông Thu hiền", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K571", "ten": "Thảo Phan", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K572", "ten": "Hà Thuỳ Trang", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/15TfxCvRfl3yAjYZQ2uevG-T2K7HsPKBW05NjVDaPXxk/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K573", "ten": "Duyen Nguyen", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1Oy7P5Xnq3XzVpIg7ctL3VwLPaWMcPc0MK7VojCiBECg/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K574", "ten": "Nguyễn Ngọc Xuân Trinh", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K575", "ten": "Vũ Nguyễn Tuyết Nhung", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1uVvXR5NIfE1cg2983hsgwXA3UCXl5di3/edit?usp=drive_link&ouid=100399631265555529624&rtpof=true&sd=true ", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K576", "ten": "Thế Trịnh", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K577", "ten": "Dương Thùy Trang", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1fWjw6vGbF13X3SRnd0mqs6J5BUkANMgD1FDWKsPvTNU/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/lỗi ảnh Notion (Ảnh 5)"], "link_note": null}, {"ma": "K578", "ten": "Đinh diệu linh", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K579", "ten": "Trần Thị Khánh Quỳnh", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1GZogcLV66ZwNIsEdEuWkUODsJ8R2hFcPZT2ohvOpxmE/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K580", "ten": "Nguyễn Thị Duyên", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1mHUGnSy-bhx0UDrD38kvyHkX7pf5IeTc2vmIzRSwA10/edit?tab=t.0", "tinhtrang": "Nộp chậm", "xeploai": null, "loi": [], "link_note": null}, {"ma": "K581", "ten": "Đặng Khánh Ly", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1PSU1QJIY6vl5I85-NPVGRpJICNFaF8jFtQCpFYLTSUU/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": [], "link_note": null}, {"ma": "K582", "ten": "Nguyễn Thị Thanh Hải", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1GB1no80_3_QVHF-hvmwg6OYJqyxkUkAVQ7yai8N1S-0/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô"], "link_note": null}, {"ma": "K583", "ten": "Nguyễn Tiến Đạt", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K584", "ten": "Lê Thị Ngọc Huyền", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1zT9LYERQUqUe4IHOWfF_y8tHKxDyxzF-ve2_lDorHTU/edit?usp=sharing", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu Thông tin về bản thân", "Thiếu/không rõ Vai trò", "Thiếu/chưa rõ Quy tắc làm việc", "Ảnh/Instruction bị cắt, thiếu bằng chứng chữ"], "link_note": null}, {"ma": "K585", "ten": "Hoang Thuy Linh", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K586", "ten": "Phí Thị Bảo Thoa", "diemdanh": "Có mặt", "link": "https://docs.google.com/document/d/1dsl36RHyuDoKVEjorDLNRCN9Rx8FKB6MsRDfpYTeUDk/edit?tab=t.0", "tinhtrang": "Đã feedback", "xeploai": "Cần bổ sung", "loi": ["Thiếu Xưng hô", "Thiếu/không rõ Vai trò"], "link_note": null}, {"ma": "K587", "ten": "Lã Ngọc Huy", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K588", "ten": "Nguyễn Thị Hà", "diemdanh": "Có mặt", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}, {"ma": "K589", "ten": "Vũ Hồng Nhung", "diemdanh": "Vắng", "link": null, "tinhtrang": null, "xeploai": null, "loi": [], "link_note": null}], "showcase": [{"ma": "K482", "ten": "Trần Ngọc Thuý Vy", "link": "https://docs.google.com/document/d/1hViqatvfCFCqX8rot-TquWEbB17QTjCCNjW7JV2kNAg/edit?usp=sharing", "diem_nhan": "Instruction mẫu mực, có quy tắc xử lý theo tình huống đặc biệt (vd: ngày nghỉ lễ). 1 câu lệnh lên cả lịch tuần lẫn to-do Notion, 17 sự kiện Calendar khớp hoàn toàn."}, {"ma": "K487", "ten": "Võ Minh Thư", "link": "https://docs.google.com/document/d/17AKyXNZ88fndy-KxABYpiTCH3M_3QpSA8Y-FeQjfAh0/edit?pli=1&tab=t.0", "diem_nhan": "Instruction đủ vai trò, quy tắc dùng Calendar/Notion đúng lúc, quy tắc hỏi lại khi thiếu thông tin, có múi giờ Việt Nam."}, {"ma": "K507", "ten": "Đào Mai Anh", "link": "https://docs.google.com/document/d/1_sIqZJ6tEijz9hlLrFwnB308OokxpKfPu-7TXJjpvsk/edit?usp=sharing", "diem_nhan": "Instruction đủ 4 yếu tố, có checklist 5 thông tin bắt buộc khi tạo sự kiện/task, quy tắc phát hiện lịch chồng chéo, xác nhận trước khi xoá/sửa dữ liệu."}, {"ma": "K511", "ten": "Hường Nguyễn Thị", "link": "https://docs.google.com/document/d/1KqxTjtaraq1sfEIunnZeKDAfmTBP5kHw7r9w24HuFYQ/edit?usp=sharing", "diem_nhan": "Giao việc thật (23 lệnh, dùng Google Drive), trợ lý tự phát hiện & liệt kê điểm dữ liệu mâu thuẫn thay vì tự suy đoán - đúng tinh thần \"không bịa số liệu\"."}, {"ma": "K542", "ten": "Huỳnh Nhân Khánh", "link": "https://docs.google.com/document/d/1kNpjxchBhPe72esNBrupHhT4Ner6WNJNhEFERlYzXcg/edit?usp=sharing", "diem_nhan": "Trợ lý \"Kazze\" chủ động hỏi lại khi có buổi học đã qua ngày thay vì tự ý xoá/sửa lịch. Đồng bộ 14 sự kiện Calendar + Database Notion 5 thuộc tính."}, {"ma": "K543", "ten": "ĐỖ THỊ MINH TRANG", "link": "https://docs.google.com/document/d/1btN0Za2pvH9tvY8aewzBA1lxwdkQjJ5wVEHdwo4C_QI/edit?usp=sharing", "diem_nhan": "Instruction gắn bối cảnh đời sống thật (bận vì có 2 con nhỏ). Trợ lý chủ động hỏi lại trước khi tạo thêm sự kiện thay vì tự quyết định."}, {"ma": "K549", "ten": "Biện Thanh Thuỷ Tiên", "link": "https://docs.google.com/document/d/1g59uLrsi-ySAuGmQ_460tSwBZXJiP09A2tOlnSX_aVQ/edit?usp=sharing", "diem_nhan": "Nguyên tắc \"không bịa thông tin\" đặt lên hàng đầu. Output khớp tuyệt đối giữa lời báo cáo của trợ lý, Calendar thật và Notion thật."}], "special_cases": [{"ma": "K540", "ten": "Nguyễn Quang Trung", "loai": "Nộp chậm", "ghi_chu": "Nộp sau hạn quy định"}, {"ma": "K580", "ten": "Nguyễn Thị Duyên", "loai": "Nộp chậm", "ghi_chu": "Nộp sau hạn quy định"}, {"ma": "K564", "ten": "ĐỖ PHÚ LỢI", "loai": "Chưa mở quyền truy cập", "ghi_chu": "Link Google Docs chưa cấp quyền xem, trợ giảng không mở được để chấm"}, {"ma": "K499", "ten": "Đỗ Thu Trang", "loai": "Nộp nhầm bài", "ghi_chu": "Link nộp trong sheet NỘP BTVN với mã K499 thực ra là bài của \"Lê Thanh Phương\" (Nhóm 5) — nộp sai mã, chưa xác định được bài thật của Đỗ Thu Trang."}]};
+
+const COLORS = ['#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#64B5CD'];
+
+function pct(n, d){ return d ? ((n/d)*100).toFixed(1) : '0.0'; }
+
+function renderKPIs(){
+  const s = DATA.summary;
+  const total = s.total_students;
+  const attend = s.diem_danh['Có mặt']||0;
+  const graded = s.tinh_trang_nop['Đã feedback']||0;
+  const late = s.tinh_trang_nop['Nộp chậm']||0;
+  const locked = s.tinh_trang_nop['Chưa mở quyền truy cập']||0;
+  const submittedNotGraded = s.tinh_trang_nop['Đã nộp']||0;
+  const submitted = graded + late + locked + submittedNotGraded;
+  const good = s.xep_loai_da_cham['Hoàn thành tốt']||0;
+  const bad = s.xep_loai_da_cham['Cần bổ sung']||0;
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-attend').textContent = attend;
+  document.getElementById('kpi-attend-sub').textContent = pct(attend,total)+'% tổng · Vắng '+(s.diem_danh['Vắng']||0);
+  document.getElementById('kpi-submit').textContent = submitted;
+  document.getElementById('kpi-submit-sub').textContent = pct(submitted,total)+'% tổng · '+pct(submitted,attend)+'% trong số có mặt';
+  document.getElementById('kpi-graded').textContent = graded;
+  document.getElementById('kpi-graded-sub').textContent = pct(graded,total)+'% tổng · '+pct(graded,submitted)+'% trong số đã nộp';
+  document.getElementById('kpi-good').textContent = good;
+  document.getElementById('kpi-good-sub').textContent = pct(good,graded)+'% trong số đã chấm';
+  document.getElementById('kpi-bad').textContent = bad;
+  document.getElementById('kpi-bad-sub').textContent = pct(bad,graded)+'% trong số đã chấm';
+
+  const notSubmitted = total - submitted;
+  document.getElementById('insight-main').innerHTML =
+    '<b>Insight chính:</b> '+attend+'/'+total+' học viên ('+pct(attend,total)+'%) có mặt Buổi 1, nhưng chỉ '+submitted+' bài ('+pct(submitted,attend)+'% trong số có mặt) nộp BTVN — nghĩa là '+
+    (s.chua_nop_breakdown['Có mặt']||0)+' học viên có mặt nhưng chưa nộp bài. Trong '+graded+' bài đã chấm, chỉ '+good+' bài ('+pct(good,graded)+'%) đạt "Hoàn thành tốt" ngay từ lần nộp đầu — '+
+    'phần lớn ('+pct(bad,graded)+'%) cần bổ sung, chủ yếu vì <b>thiếu mục Xưng hô</b> trong Instruction.';
+}
+
+function renderCharts(){
+  const s = DATA.summary;
+  new Chart(document.getElementById('chart-attend'), {
+    type:'doughnut',
+    data:{ labels:['Có mặt','Vắng'], datasets:[{ data:[s.diem_danh['Có mặt']||0, s.diem_danh['Vắng']||0], backgroundColor:[COLORS[2],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const tt = s.tinh_trang_nop;
+  const submitLabels = ['Đã feedback','Nộp chậm','Chưa mở quyền truy cập','Đã nộp (chưa chấm)','Chưa nộp'];
+  const submitData = [tt['Đã feedback']||0, tt['Nộp chậm']||0, tt['Chưa mở quyền truy cập']||0, tt['Đã nộp']||0, tt['None']||0];
+  new Chart(document.getElementById('chart-submit'), {
+    type:'doughnut',
+    data:{ labels:submitLabels, datasets:[{ data:submitData, backgroundColor:[COLORS[2],COLORS[1],COLORS[4],COLORS[6],'#cbd2db'], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:10,font:{size:10.5}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const gl = s.xep_loai_da_cham;
+  new Chart(document.getElementById('chart-grade'), {
+    type:'doughnut',
+    data:{ labels:['Hoàn thành tốt','Cần bổ sung'], datasets:[{ data:[gl['Hoàn thành tốt']||0, gl['Cần bổ sung']||0], backgroundColor:[COLORS[2],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const errEntries = Object.entries(s.loi_thuong_gap).sort((a,b)=>b[1]-a[1]);
+  new Chart(document.getElementById('chart-errors'), {
+    type:'bar',
+    data:{ labels:errEntries.map(e=>e[0]), datasets:[{ label:'Số bài mắc lỗi', data:errEntries.map(e=>e[1]), backgroundColor: COLORS[0]+'CC', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> c.parsed.x+' bài ('+pct(c.parsed.x,54)+'% trong số Cần bổ sung)' } } },
+      scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+}
+
+function renderShowcase(){
+  const grid = document.getElementById('showcase-grid');
+  grid.innerHTML = DATA.showcase.map(s => `
+    <div class="showcase-card">
+      <div class="name">${s.ten}</div>
+      <div class="ma">${s.ma} · Hoàn thành tốt</div>
+      <div class="desc">${s.diem_nhan}</div>
+      ${s.link ? `<a href="${s.link}" target="_blank" rel="noopener">Xem bài làm →</a>` : `<span class="noaccess">Bài nộp qua ảnh chụp / không có link công khai</span>`}
+    </div>
+  `).join('');
+}
+
+function renderSpecialCases(){
+  const body = document.getElementById('spcase-body');
+  body.innerHTML = DATA.special_cases.map(c => `
+    <tr>
+      <td>${c.ma}</td>
+      <td>${c.ten}</td>
+      <td><span class="pill ${c.loai==='Nộp chậm'?'late':(c.loai==='Chưa mở quyền truy cập'?'locked':'bs')}">${c.loai}</span></td>
+      <td>${c.ghi_chu}</td>
+    </tr>
+  `).join('');
+}
+
+function pillFor(field, value){
+  if(field==='diemdanh'){
+    return value==='Có mặt' ? `<span class="pill tot">Có mặt</span>` : `<span class="pill absent">Vắng</span>`;
+  }
+  if(field==='tinhtrang'){
+    if(value==='Đã feedback') return `<span class="pill tot">Đã feedback</span>`;
+    if(value==='Nộp chậm') return `<span class="pill late">Nộp chậm</span>`;
+    if(value==='Chưa mở quyền truy cập') return `<span class="pill locked">Khoá quyền</span>`;
+    if(value==='Đã nộp') return `<span class="pill late">Đã nộp (chưa chấm)</span>`;
+    return `<span class="pill none">Chưa nộp</span>`;
+  }
+  if(field==='xeploai'){
+    if(value==='Hoàn thành tốt') return `<span class="pill tot">Hoàn thành tốt</span>`;
+    if(value==='Cần bổ sung') return `<span class="pill bs">Cần bổ sung</span>`;
+    return '—';
+  }
+  return value||'—';
+}
+
+let sortState = { field:null, dir:'asc' };
+
+function getFiltered(){
+  const q = document.getElementById('f-search').value.trim().toLowerCase();
+  const fd = document.getElementById('f-diemdanh').value;
+  const ft = document.getElementById('f-tinhtrang').value;
+  const fx = document.getElementById('f-xeploai').value;
+  return DATA.students.filter(s => {
+    if(q && !(s.ma.toLowerCase().includes(q) || s.ten.toLowerCase().includes(q))) return false;
+    if(fd!=='all' && s.diemdanh!==fd) return false;
+    if(ft!=='all'){
+      if(ft==='none'){ if(s.tinhtrang!==null) return false; }
+      else if(s.tinhtrang!==ft) return false;
+    }
+    if(fx!=='all' && s.xeploai!==fx) return false;
+    return true;
+  });
+}
+
+function renderTable(){
+  let rows = getFiltered();
+  if(sortState.field){
+    rows = [...rows].sort((a,b)=>{
+      let av = a[sortState.field]||''; let bv = b[sortState.field]||'';
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortState.dir==='asc' ? cmp : -cmp;
+    });
+  }
+  document.getElementById('table-count').textContent = `Hiển thị ${rows.length} / ${DATA.students.length} học viên`;
+  const body = document.getElementById('main-table-body');
+  body.innerHTML = rows.map(s => `
+    <tr>
+      <td>${s.ma}</td>
+      <td>${s.ten}</td>
+      <td>${pillFor('diemdanh', s.diemdanh)}</td>
+      <td>${pillFor('tinhtrang', s.tinhtrang)}</td>
+      <td>${pillFor('xeploai', s.xeploai)}</td>
+      <td>${s.loi.length ? s.loi.map(l=>`<span class="loi-chip">${l}</span>`).join('') : (s.xeploai==='Hoàn thành tốt' ? '—' : '')}</td>
+      <td>${s.link ? `<a href="${s.link}" target="_blank" rel="noopener">Xem</a>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function applyFilters(){ renderTable(); }
+
+document.getElementById('f-search').addEventListener('input', applyFilters);
+document.querySelectorAll('#main-table thead th[data-field]').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.getAttribute('data-field');
+    if(sortState.field===field){ sortState.dir = sortState.dir==='asc'?'desc':'asc'; }
+    else { sortState.field = field; sortState.dir='asc'; }
+    renderTable();
+  });
+});
+
+renderKPIs();
+renderCharts();
+renderShowcase();
+renderSpecialCases();
+renderTable();
+</script>
+</body>
+</html>
