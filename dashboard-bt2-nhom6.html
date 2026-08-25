@@ -182,6 +182,11 @@ footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px
       <div class="kpi-value" id="kpi-topissue">–</div>
       <div class="kpi-sub" id="kpi-topissue-sub">trong tổng số học viên</div>
     </div>
+    <div class="kpi-card c2">
+      <div class="kpi-label">Điểm danh Buổi 2</div>
+      <div class="kpi-value" id="kpi-attend">–</div>
+      <div class="kpi-sub" id="kpi-attend-sub">có mặt / tổng số</div>
+    </div>
   </div>
 
   <div class="insight-box" id="insight-main">
@@ -198,6 +203,26 @@ footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px
       <h3>Số skill nộp mỗi học viên</h3>
       <canvas id="chart-soskill"></canvas>
     </div>
+  </div>
+
+  <div class="section-title">🗓️ Điểm danh Buổi 2 <span class="tag" id="tag-attendcount">– học viên</span></div>
+  <div class="chart-row">
+    <div class="chart-container">
+      <h3>Tình trạng điểm danh</h3>
+      <canvas id="chart-attend"></canvas>
+    </div>
+    <div class="chart-container wide">
+      <h3>Bài khoá truy cập / không mở được (cần xử lý lại link)</h3>
+      <div class="table-section" style="box-shadow:none;border:none;padding:0;margin-bottom:0;">
+        <table class="data-table spcase-table">
+          <thead><tr><th>Mã HV</th><th>Họ tên</th><th>Điểm danh</th><th>Tình trạng nộp</th></tr></thead>
+          <tbody id="access-issue-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="insight-box" id="insight-attend">
+    <b>Điểm danh:</b> đang tính...
   </div>
 
   <div class="section-title">🔍 Chủ đề cần cải thiện phổ biến (rút từ gợi ý chấm bài) <span class="tag" id="tag-issuecount">– lượt nhắc</span></div>
@@ -244,6 +269,8 @@ footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px
         <th data-field="soSkill">Số skill</th>
         <th>Tên skill</th>
         <th data-field="xeploai">Xếp loại</th>
+        <th data-field="diemdanh">Điểm danh</th>
+        <th>Link bài làm</th>
         <th>Chủ đề cần cải thiện</th>
       </tr></thead>
       <tbody id="main-table-body"></tbody>
@@ -334,11 +361,20 @@ function firstBullet(text){
   return first.length > 170 ? first.slice(0,170).trim()+'…' : first;
 }
 
+const ACCESS_ISSUE_KEYWORDS = ['khoa truy cap','khong truy cap','khong mo duoc','khong xem duoc','private','requestaccess','request access','khong the truy cap'];
+
+function isAccessIssue(link, tinhtrang){
+  const norm = stripAccents(String(tinhtrang||'')) + ' ' + stripAccents(String(link||''));
+  return ACCESS_ISSUE_KEYWORDS.some(k => norm.includes(k));
+}
+
 function buildDataset(rawRows){
   const xepLoaiCounter = {};
   const soSkillCounter = {};
   const issueCounter = {};
+  const attendCounter = {};
   const specialCases = [];
+  const accessIssues = [];
   const students = [];
   let totalSkillSum = 0;
 
@@ -351,10 +387,14 @@ function buildDataset(rawRows){
     const xeploai = String(row.xep_loai||'').trim() || 'Không rõ';
     const dat = String(row.dat_lam_tot||'').trim();
     const goiy = String(row.goi_y_cai_thien||'').trim();
+    const diemdanh = String(row.diemdanh||'').trim() || 'Chưa rõ';
+    const link = String(row.link||'').trim();
+    const tinhtrang = String(row.tinhtrang_nop||'').trim();
 
     xepLoaiCounter[xeploai] = (xepLoaiCounter[xeploai]||0) + 1;
     soSkillCounter[soSkill] = (soSkillCounter[soSkill]||0) + 1;
     totalSkillSum += soSkill;
+    attendCounter[diemdanh] = (attendCounter[diemdanh]||0) + 1;
 
     const issues = extractIssues(goiy);
     issues.forEach(i => { issueCounter[i] = (issueCounter[i]||0) + 1; });
@@ -363,7 +403,11 @@ function buildDataset(rawRows){
       specialCases.push({ ma, ten, loai: xeploai, ghi_chu: firstBullet(goiy) });
     }
 
-    students.push({ ma, ten, soSkill, tenSkill, xeploai, dat, goiy, issues });
+    if(isAccessIssue(link, tinhtrang)){
+      accessIssues.push({ ma, ten, diemdanh, tinhtrang: tinhtrang || 'Link không truy cập được' });
+    }
+
+    students.push({ ma, ten, soSkill, tenSkill, xeploai, dat, goiy, issues, diemdanh, link, tinhtrang });
   });
 
   const issueSorted = Object.fromEntries(Object.entries(issueCounter).sort((a,b) => b[1]-a[1]));
@@ -374,9 +418,10 @@ function buildDataset(rawRows){
     so_skill: soSkillCounter,
     avg_skill: students.length ? (totalSkillSum/students.length) : 0,
     issues: issueSorted,
+    diem_danh: attendCounter,
   };
 
-  return { summary, students, showcase: SHOWCASE, special_cases: specialCases };
+  return { summary, students, showcase: SHOWCASE, special_cases: specialCases, access_issues: accessIssues };
 }
 
 let DATA = null;
@@ -406,6 +451,7 @@ function init(){
       renderShowcase();
       renderResources();
       renderSpecialCases();
+      renderAccessIssues();
       renderTable();
     },
     error: function(err){
@@ -451,6 +497,19 @@ function renderKPIs(){
   document.getElementById('tag-studentcount').textContent = total+' học viên';
   document.getElementById('tag-issuecount').textContent = issueEntries.reduce((a,e)=>a+e[1],0)+' lượt nhắc';
   document.getElementById('issue-denom').textContent = total;
+
+  const cm = s.diem_danh['Có mặt']||0;
+  document.getElementById('kpi-attend').textContent = cm+'/'+total;
+  document.getElementById('kpi-attend-sub').textContent = pct(cm,total)+'% có mặt';
+  document.getElementById('tag-attendcount').textContent = total+' học viên';
+
+  const vang = s.diem_danh['Vắng']||0;
+  const chuaro = total - cm - vang;
+  let attendHtml = '<b>Điểm danh:</b> '+cm+'/'+total+' học viên ('+pct(cm,total)+'%) có mặt Buổi 2';
+  if(vang) attendHtml += ', '+vang+' học viên vắng ('+pct(vang,total)+'%)';
+  if(chuaro>0) attendHtml += ', '+chuaro+' học viên chưa có dữ liệu điểm danh';
+  attendHtml += '.';
+  document.getElementById('insight-attend').innerHTML = attendHtml;
 }
 
 function renderCharts(){
@@ -459,6 +518,16 @@ function renderCharts(){
   new Chart(document.getElementById('chart-xeploai'), {
     type:'doughnut',
     data:{ labels:['Khá','Đạt','Chưa đạt'], datasets:[{ data:[xl['Khá']||0, xl['Đạt']||0, xl['Chưa đạt']||0], backgroundColor:[COLORS[0],COLORS[4],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const dd = s.diem_danh;
+  const ddLabels = Object.keys(dd);
+  new Chart(document.getElementById('chart-attend'), {
+    type:'doughnut',
+    data:{ labels: ddLabels, datasets:[{ data: ddLabels.map(k=>dd[k]), backgroundColor:[COLORS[0],COLORS[3],COLORS[6],COLORS[5]], borderColor:'#fff', borderWidth:2 }] },
     options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
       plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
         tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
@@ -497,15 +566,22 @@ function renderCharts(){
 
 function renderShowcase(){
   const grid = document.getElementById('showcase-grid');
-  grid.innerHTML = DATA.showcase.map(s => `
+  grid.innerHTML = DATA.showcase.map(s => {
+    const stu = DATA.students.find(x => x.ma === s.ma);
+    const link = stu && stu.link && !isAccessIssue(stu.link, stu.tinhtrang) ? stu.link : '';
+    const linkHtml = link
+      ? `<a href="${link}" target="_blank" rel="noopener" style="font-family:var(--font-display);font-size:11.5px;font-weight:700;color:var(--purple-mid);text-decoration:none;">Xem bài làm →</a>`
+      : `<span class="noaccess">Bài mẫu tham khảo cấu trúc — không hiển thị điểm số</span>`;
+    return `
     <div class="showcase-card">
       <div class="name">${s.ten}</div>
       <div class="ma">${s.ma} · Xếp loại Khá</div>
       <div class="skillname">${s.ten_skill}</div>
       <div class="desc">${s.diem_nhan}</div>
-      <span class="noaccess">Bài mẫu tham khảo cấu trúc — không hiển thị điểm số</span>
+      ${linkHtml}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function renderResources(){
@@ -536,11 +612,39 @@ function renderSpecialCases(){
   `).join('');
 }
 
+function renderAccessIssues(){
+  const body = document.getElementById('access-issue-body');
+  if(!DATA.access_issues.length){
+    body.innerHTML = '<tr><td colspan="4" class="snippet">Không có bài nào bị khoá truy cập.</td></tr>';
+    return;
+  }
+  body.innerHTML = DATA.access_issues.map(c => `
+    <tr>
+      <td>${c.ma}</td>
+      <td>${c.ten}</td>
+      <td>${c.diemdanh}</td>
+      <td class="snippet">${c.tinhtrang}</td>
+    </tr>
+  `).join('');
+}
+
 function pillFor(xeploai){
   if(xeploai==='Khá') return `<span class="pill tot">Khá</span>`;
   if(xeploai==='Đạt') return `<span class="pill mid">Đạt</span>`;
   if(xeploai==='Chưa đạt') return `<span class="pill bs">Chưa đạt</span>`;
   return `<span class="pill none">${xeploai||'—'}</span>`;
+}
+
+function pillForAttend(diemdanh){
+  if(diemdanh==='Có mặt') return `<span class="pill tot">Có mặt</span>`;
+  if(diemdanh==='Vắng') return `<span class="pill bs">Vắng</span>`;
+  return `<span class="pill none">${diemdanh||'—'}</span>`;
+}
+
+function linkCellFor(s){
+  if(!s.link) return '—';
+  if(isAccessIssue(s.link, s.tinhtrang)) return `<span class="pill bs">Khoá truy cập</span>`;
+  return `<a href="${s.link}" target="_blank" rel="noopener" style="color:var(--purple-mid);font-weight:700;font-size:12px;">Xem bài →</a>`;
 }
 
 let sortState = { field:null, dir:'asc' };
@@ -578,6 +682,8 @@ function renderTable(){
       <td>${s.soSkill}</td>
       <td>${s.tenSkill}</td>
       <td>${pillFor(s.xeploai)}</td>
+      <td>${pillForAttend(s.diemdanh)}</td>
+      <td>${linkCellFor(s)}</td>
       <td>${s.issues.length ? s.issues.map(l=>`<span class="loi-chip">${l}</span>`).join('') : '—'}</td>
     </tr>
   `).join('');
