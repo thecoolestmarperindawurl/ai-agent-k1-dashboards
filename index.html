@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
 <style>
 /* ===========================================================
    Branding: đồng bộ theo tông LANHMAR (lanhmar.id.vn) — cùng bộ
@@ -55,6 +56,17 @@ header.top{
 h1{font-family:var(--font-display);font-size:1.6rem;font-weight:700;margin:0 0 8px;}
 .sub{color:rgba(255,255,255,.82);font-size:0.95rem;}
 
+.section-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--purple-deep);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+
+.streak-box{background:var(--white);border:2px solid var(--lav-300);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow-soft);margin-bottom:32px;}
+.streak-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px;}
+.streak-stat{font-family:var(--font-display);font-weight:800;font-size:1.7rem;color:var(--purple-deep);}
+.streak-sub{font-size:0.85rem;color:var(--ink-soft);margin-bottom:16px;}
+.streak-list{display:flex;flex-wrap:wrap;gap:8px;max-height:230px;overflow-y:auto;padding-right:4px;}
+.streak-chip{display:inline-flex;align-items:center;gap:6px;background:var(--lav-100);border:1px solid var(--lav-300);border-radius:999px;padding:6px 12px;font-size:0.8rem;font-weight:600;color:var(--ink);}
+.streak-chip .fire{font-size:0.9rem;}
+.streak-empty{font-size:0.85rem;color:var(--ink-soft);font-style:italic;}
+
 .grid{display:grid;grid-template-columns:1fr;gap:14px;}
 .card{
   background:var(--white);border:2px solid var(--lav-300);border-radius:var(--radius);
@@ -92,6 +104,15 @@ footer.site{
 <h1>📊 Nhóm 6 — Khoá Xây trợ lý cá nhân AI Agent K1</h1>
 <div class="sub">VUKP x KesFlow — Dashboard chấm BTVN theo từng buổi học</div>
 </header>
+
+<div class="section-title">🔥 Giữ chuỗi (Streak) — Điểm danh + nộp bài đầy đủ mọi buổi</div>
+<div class="streak-box">
+  <div class="streak-top">
+    <span class="streak-stat" id="streak-stat">Đang tải…</span>
+  </div>
+  <div class="streak-sub" id="streak-sub">Tính trên các buổi đã học · nguồn: Dashboard Data B1 + B2 (Google Sheet sống)</div>
+  <div class="streak-list" id="streak-list"><span class="streak-empty">Đang tải dữ liệu điểm danh &amp; nộp bài…</span></div>
+</div>
 
 <div class="grid">
 <a class="card-link" href="dashboard-bt1-nhom6.html">
@@ -149,5 +170,112 @@ footer.site{
 
 <footer class="site">Cập nhật theo tiến độ khoá học · thecoolestmarperindawurl</footer>
 </div>
+
+<script>
+// ============================================================================
+// STREAK (Giữ chuỗi): fetch trực tiếp 2 CSV sống "Dashboard Data B1" và
+// "Dashboard Data B2" (cùng workbook Google Sheet của Nhóm 6, đã Publish to
+// web), join theo mã học viên, rồi tính "giữ chuỗi" = điểm danh Có mặt VÀ nộp
+// bài đầy đủ ở TẤT CẢ các buổi đã học tính đến hiện tại (hiện có Buổi 1 + 2).
+// Khi trợ giảng mở thêm tab Dashboard Data B3, B4... chỉ cần thêm URL tương
+// ứng vào mảng SESSION_CSVS bên dưới — không cần sửa logic tính streak.
+// ============================================================================
+
+const SESSION_CSVS = [
+  { buoi: 1, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1274208738&single=true&output=csv" },
+  { buoi: 2, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=182557518&single=true&output=csv" },
+];
+
+function normStr(v){ return String(v||'').trim(); }
+
+function isAccessIssueStreak(link, tinhtrang){
+  const norm = (normStr(tinhtrang)+' '+normStr(link)).toLowerCase();
+  return norm.includes('khoá truy cập') || norm.includes('khoa truy cap') || norm.includes('khong truy cap') ||
+         norm.includes('chưa mở quyền') || norm.includes('chua mo quyen') || norm.includes('private');
+}
+
+// Buổi 1 dùng schema gốc (ma, ten, diemdanh, link, tinhtrang, feedback).
+// Buổi 2 dùng schema mở rộng có thêm cột diemdanh/link/tinhtrang_nop —
+// hai buổi khác tên cột "tình trạng nộp" nên xử lý riêng theo buoi.
+function attendedAndSubmitted(row, buoi){
+  const diemdanh = normStr(row.diemdanh);
+  const attended = diemdanh === 'Có mặt';
+  if(!attended) return false;
+
+  if(buoi === 1){
+    const tinhtrang = normStr(row.tinhtrang);
+    const link = normStr(row.link);
+    if(isAccessIssueStreak(link, tinhtrang)) return false;
+    return ['Đã feedback','Nộp chậm','Đã nộp'].includes(tinhtrang);
+  }
+  // buoi 2 trở đi: coi là "nộp đầy đủ" khi có link hợp lệ (không bị khoá truy cập)
+  const link = normStr(row.link);
+  const tinhtrang = normStr(row.tinhtrang_nop || row.tinhtrang);
+  if(!link) return false;
+  if(isAccessIssueStreak(link, tinhtrang)) return false;
+  return true;
+}
+
+function loadStreak(){
+  const results = [];
+  let loaded = 0;
+  const perBuoi = {};
+
+  SESSION_CSVS.forEach(sess => {
+    Papa.parse(sess.url, {
+      download: true, header: true, skipEmptyLines: true,
+      complete: function(res){
+        const map = {};
+        (res.data||[]).forEach(row => {
+          const ma = normStr(row.ma);
+          if(!ma) return;
+          map[ma] = { ten: normStr(row.ten), ok: attendedAndSubmitted(row, sess.buoi) };
+        });
+        perBuoi[sess.buoi] = map;
+        loaded++;
+        if(loaded === SESSION_CSVS.length) computeStreak(perBuoi);
+      },
+      error: function(){
+        loaded++;
+        if(loaded === SESSION_CSVS.length) computeStreak(perBuoi);
+      },
+    });
+  });
+}
+
+function computeStreak(perBuoi){
+  // Buổi 1 (roster đầy đủ nhất) làm nguồn danh sách mã học viên gốc.
+  const baseBuoi = SESSION_CSVS[0].buoi;
+  const base = perBuoi[baseBuoi] || {};
+  const buoiList = SESSION_CSVS.map(s => s.buoi);
+
+  const rows = Object.keys(base).map(ma => {
+    const ten = base[ma].ten;
+    let streak = 0;
+    for(const b of buoiList){
+      const rec = (perBuoi[b]||{})[ma];
+      if(rec && rec.ok){ streak++; } else { break; }
+    }
+    return { ma, ten, streak };
+  });
+
+  const total = rows.length;
+  const maxStreak = buoiList.length;
+  const kept = rows.filter(r => r.streak === maxStreak).sort((a,b)=> a.ma.localeCompare(b.ma));
+
+  document.getElementById('streak-stat').textContent = kept.length + '/' + total + ' học viên';
+  document.getElementById('streak-sub').textContent =
+    'đang giữ chuỗi đủ ' + maxStreak + '/' + maxStreak + ' buổi đã học (điểm danh + nộp bài đầy đủ mỗi buổi) · nguồn: Dashboard Data B1 + B2';
+
+  const list = document.getElementById('streak-list');
+  if(!kept.length){
+    list.innerHTML = '<span class="streak-empty">Chưa có học viên nào giữ chuỗi đủ tất cả các buổi.</span>';
+    return;
+  }
+  list.innerHTML = kept.map(k => `<span class="streak-chip"><span class="fire">🔥</span>${k.ma} · ${k.ten}</span>`).join('');
+}
+
+loadStreak();
+</script>
 </body>
 </html>
