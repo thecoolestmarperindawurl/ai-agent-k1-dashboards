@@ -55,6 +55,18 @@ body{
 @keyframes accent-shimmer{0%,100%{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.45);}50%{color:var(--orange-soft);text-shadow:0 0 12px rgba(255,122,69,.85);}}
 
 .container{max-width:1360px;margin:0 auto;padding:var(--gap);}
+
+/* ---------- dashboard nav (Trang chủ / buổi liền trước - liền sau) ---------- */
+.dash-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:var(--gap);}
+.dash-nav-home{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--purple-deep);background:var(--bg-card);border:2px solid var(--lav-300);padding:8px 16px;border-radius:999px;text-decoration:none;transition:transform .2s ease,border-color .2s ease,background .2s ease;}
+.dash-nav-home:hover{border-color:var(--purple-deep);background:var(--lav-100);transform:translateY(-2px);}
+.dash-nav-adjacent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.dash-nav-btn{font-family:var(--font-display);font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;text-decoration:none;white-space:nowrap;transition:transform .2s ease,background .2s ease;}
+.dash-nav-btn.enabled{background:var(--purple-deep);color:#fff;}
+.dash-nav-btn.enabled:hover{background:var(--purple-mid);transform:translateY(-2px);}
+.dash-nav-btn.disabled{background:var(--lav-200);color:var(--ink-soft);cursor:default;pointer-events:none;}
+.dash-nav-current{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);padding:0 4px;}
+
 header.top{background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);box-shadow:var(--shadow-soft);}
 header.top h1{font-family:var(--font-display);font-size:21px;font-weight:700;margin-bottom:4px;}
 header.top p{font-size:13px;color:rgba(255,255,255,.8);}
@@ -133,6 +145,15 @@ footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px
 </div>
 
 <div class="container">
+
+  <div class="dash-nav">
+    <a href="index.html" class="dash-nav-home">🏠 Trang chủ</a>
+    <div class="dash-nav-adjacent">
+      <span class="dash-nav-btn disabled">← Buổi trước</span>
+      <span class="dash-nav-current">Buổi 1 / 2</span>
+      <a href="dashboard-bt2-nhom6.html" class="dash-nav-btn enabled">Buổi 2 →</a>
+    </div>
+  </div>
 
   <header class="top">
     <h1>Dashboard BTVN Buổi 1 — Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</h1>
