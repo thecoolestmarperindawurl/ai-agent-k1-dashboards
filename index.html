@@ -3,39 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nhóm 6 — Dashboard Khoá Xây trợ lý cá nhân AI Agent K1</title>
+<title>Dashboard BTVN Buổi 2 — Nhóm 6 | AI Agent K1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
 <style>
 /* ===========================================================
-   Branding: đồng bộ theo tông LANHMAR (lanhmar.id.vn) — cùng bộ
-   token với dashboard-bt1-nhom6.html (palette tím/cam/lavender,
-   Montserrat, marquee, hover lift).
+   Branding: chuyển theo tông LANHMAR (lanhmar.id.vn) — palette
+   tím/cam + nền lavender + Montserrat, giữ nguyên bố cục dữ
+   liệu gốc (KPI/biểu đồ/bảng) để không ảnh hưởng khả năng đọc.
    =========================================================== */
 :root{
   --purple-deep:#2D2FEF; --purple-mid:#6A5CFF; --purple-soft:#8F84FF;
   --lav-100:#F3F1FD; --lav-200:#E7E2FB; --lav-300:#D6CEF7; --lav-400:#B2A4EF;
   --orange:#FF7A45; --orange-dark:#E85D2A; --orange-soft:#FFD8C2;
   --orange-text:#A6380D; --orange-deep:#C24418;
-  --ink:#241F45; --ink-soft:#55507A; --white:#FFFFFF;
+  --ink:#241F45; --ink-soft:#55507A; --paper:#FFFDF9; --white:#FFFFFF;
   --font-display:'Montserrat',system-ui,sans-serif; --font-body:'Montserrat',system-ui,sans-serif;
-  --radius:18px; --shadow-soft:0 10px 26px rgba(45,47,239,.12);
+
+  --bg-primary:var(--lav-100); --bg-card:var(--white); --bg-header:var(--purple-deep);
+  --text-primary:var(--ink); --text-secondary:var(--ink-soft); --text-on-dark:#ffffff;
+  --c1:var(--purple-deep); --c2:var(--orange); --c3:var(--purple-mid); --c4:var(--orange-deep);
+  --c5:var(--purple-soft); --c6:var(--ink-soft); --c7:var(--lav-400);
+  --positive:var(--purple-deep); --negative:var(--orange-deep); --warn:var(--orange); --neutral:var(--ink-soft);
+  --gap:16px; --radius:18px; --shadow-soft:0 10px 26px rgba(45,47,239,.12);
 }
-*{box-sizing:border-box;margin:0;padding:0;}
+*{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{
-  font-family:var(--font-body);color:var(--ink);line-height:1.5;
+  font-family:var(--font-body);color:var(--text-primary);line-height:1.5;
   background:
     radial-gradient(circle at 12% 6%, rgba(255,122,69,.10), transparent 40%),
     radial-gradient(circle at 92% 12%, rgba(106,92,255,.14), transparent 45%),
-    var(--lav-100);
+    var(--bg-primary);
   min-height:100vh;
 }
 @media (prefers-reduced-motion: reduce){
   .marquee__track{animation:none;}
-  .card.ready{transition:none;}
+  .badge-pulse{animation:none;}
+  .kpi-card, .showcase-card, .btn-like{transition:none;}
 }
 
 /* ---------- marquee ticker (chữ ký thương hiệu LANHMAR) ---------- */
@@ -46,236 +54,668 @@ body{
 @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
 @keyframes accent-shimmer{0%,100%{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.45);}50%{color:var(--orange-soft);text-shadow:0 0 12px rgba(255,122,69,.85);}}
 
-.wrap{max-width:900px;margin:0 auto;padding:40px 24px 64px;}
+.container{max-width:1360px;margin:0 auto;padding:var(--gap);}
+header.top{background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);box-shadow:var(--shadow-soft);}
+header.top h1{font-family:var(--font-display);font-size:21px;font-weight:700;margin-bottom:4px;}
+header.top p{font-size:13px;color:rgba(255,255,255,.8);}
+.badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.badge{font-family:var(--font-display);font-size:12px;font-weight:600;background:rgba(255,255,255,.16);padding:6px 14px;border-radius:999px;color:#fff;}
+.badge-pulse{animation:badge-pulse 3.2s ease-in-out infinite;}
+@keyframes badge-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,122,69,.45);}50%{box-shadow:0 0 0 6px rgba(255,122,69,0);}}
 
-header.top{
-  background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));
-  color:#fff;padding:28px 30px;border-radius:var(--radius);box-shadow:var(--shadow-soft);
-  margin-bottom:32px;
-}
-h1{font-family:var(--font-display);font-size:1.6rem;font-weight:700;margin:0 0 8px;}
-.sub{color:rgba(255,255,255,.82);font-size:0.95rem;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border-left:4px solid var(--c1);border:2px solid var(--lav-300);border-left-width:4px;transition:transform .25s ease,box-shadow .25s ease;}
+.kpi-card:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(45,47,239,.18);}
+.kpi-card.c2{border-left-color:var(--c3);}
+.kpi-card.c3{border-left-color:var(--c2);}
+.kpi-card.c4{border-left-color:var(--c5);}
+.kpi-card.c5{border-left-color:var(--positive);}
+.kpi-card.c6{border-left-color:var(--negative);}
+.kpi-label{font-family:var(--font-display);font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600;}
+.kpi-value{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
 
-.section-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--purple-deep);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+.section-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--purple-deep);margin:26px 0 12px;display:flex;align-items:center;gap:10px;}
+.section-title .tag{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--orange-soft);color:var(--orange-text);padding:3px 10px;border-radius:999px;}
 
-.streak-box{background:var(--white);border:2px solid var(--lav-300);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow-soft);margin-bottom:32px;}
-.streak-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px;}
-.streak-stat{font-family:var(--font-display);font-weight:800;font-size:1.7rem;color:var(--purple-deep);}
-.streak-sub{font-size:0.85rem;color:var(--ink-soft);margin-bottom:16px;}
-.streak-list{display:flex;flex-wrap:wrap;gap:8px;max-height:230px;overflow-y:auto;padding-right:4px;}
-.streak-chip{display:inline-flex;align-items:center;gap:6px;background:var(--lav-100);border:1px solid var(--lav-300);border-radius:999px;padding:6px 12px;font-size:0.8rem;font-weight:600;color:var(--ink);}
-.streak-chip .fire{font-size:0.9rem;}
-.streak-empty{font-size:0.85rem;color:var(--ink-soft);font-style:italic;}
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);}
+.chart-container h3{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px;}
+.chart-container canvas{max-height:280px;}
+.chart-container.wide{grid-column:span 2;}
+@media (max-width:820px){.chart-container.wide{grid-column:span 1;}}
 
-.grid{display:grid;grid-template-columns:1fr;gap:14px;}
-.card{
-  background:var(--white);border:2px solid var(--lav-300);border-radius:var(--radius);
-  padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;
-  box-shadow:var(--shadow-soft);
-}
-.card.ready{cursor:pointer;border-color:var(--purple-soft);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;}
-.card.ready:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(45,47,239,.18);border-color:var(--purple-deep);}
-.card.pending{opacity:0.7;}
-.card-left{display:flex;flex-direction:column;gap:5px;}
-.buoi-label{font-family:var(--font-display);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--orange-text);}
-.buoi-title{font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--ink);}
-.badge{font-family:var(--font-display);font-size:0.75rem;font-weight:700;padding:6px 14px;border-radius:999px;white-space:nowrap;}
-.badge.ready{background:var(--purple-deep);color:#fff;}
-.badge.pending{background:var(--lav-200);color:var(--ink-soft);}
-a.card-link{text-decoration:none;color:inherit;display:block;}
+.insight-box{background:var(--orange-soft);border:1px solid var(--orange-dark);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--orange-text);margin-bottom:var(--gap);}
+.insight-box b{color:var(--orange-deep);}
 
-footer.site{
-  margin-top:40px;color:rgba(255,255,255,.85);font-size:0.82rem;text-align:center;
-  background:var(--purple-deep);border-radius:var(--radius);padding:20px;
-}
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.showcase-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft);border-top:3px solid var(--purple-deep);border-left:2px solid var(--lav-300);border-right:2px solid var(--lav-300);border-bottom:2px solid var(--lav-300);transition:transform .25s ease,box-shadow .25s ease;}
+.showcase-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(45,47,239,.16);}
+.showcase-card .name{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:2px;color:var(--ink);}
+.showcase-card .ma{font-size:11px;color:var(--text-secondary);margin-bottom:8px;}
+.showcase-card .desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;min-height:64px;}
+.showcase-card a{font-family:var(--font-display);font-size:12px;color:var(--purple-mid);text-decoration:none;font-weight:700;}
+.showcase-card a:hover{text-decoration:underline;color:var(--purple-deep);}
+.showcase-card .noaccess{font-size:12px;color:var(--text-secondary);font-style:italic;}
+
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.resource-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft);border-top:3px solid var(--orange);border-left:2px solid var(--lav-300);border-right:2px solid var(--lav-300);border-bottom:2px solid var(--lav-300);transition:transform .25s ease,box-shadow .25s ease;}
+.resource-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(255,122,69,.18);}
+.resource-card .rsrc{font-family:var(--font-display);font-size:10.5px;color:var(--orange-deep);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
+.resource-card .rtitle{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:8px;color:var(--ink);}
+.resource-card .rdesc{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;}
+.resource-card a{font-family:var(--font-display);font-size:12px;color:var(--purple-mid);text-decoration:none;font-weight:700;}
+.resource-card a:hover{text-decoration:underline;color:var(--purple-deep);}
+
+.table-section{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);overflow-x:auto;margin-bottom:var(--gap);}
+.table-section h3{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:12px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.filters select, .filters input{padding:8px 14px;border:2px solid var(--lav-300);border-radius:999px;font-size:12.5px;font-family:var(--font-body);background:#fff;color:var(--ink);transition:border-color .2s ease;}
+.filters select:focus, .filters input:focus{outline:none;border-color:var(--purple-mid);}
+.filters input{min-width:180px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table thead th{text-align:left;padding:9px 10px;border-bottom:2px solid var(--lav-300);color:var(--text-secondary);font-family:var(--font-display);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;}
+.data-table thead th:hover{color:var(--purple-deep);background:var(--lav-100);}
+.data-table tbody td{padding:8px 10px;border-bottom:1px solid var(--lav-200);vertical-align:top;}
+.data-table tbody tr:hover{background:var(--lav-100);}
+.pill{display:inline-block;font-family:var(--font-display);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;}
+.pill.tot{background:rgba(45,47,239,.12);color:var(--purple-deep);}
+.pill.bs{background:var(--orange-soft);color:var(--orange-text);}
+.pill.absent{background:var(--lav-200);color:var(--ink-soft);}
+.pill.late{background:var(--orange-soft);color:var(--orange-deep);}
+.pill.locked{background:var(--lav-300);color:var(--purple-mid);}
+.pill.none{background:var(--lav-200);color:var(--ink-soft);}
+.loi-chip{display:inline-block;font-size:10.5px;background:var(--lav-200);color:var(--ink-soft);padding:2px 8px;border-radius:999px;margin:1px 3px 1px 0;font-weight:600;}
+.count-info{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
+.spcase-table td, .spcase-table th{padding:8px 10px;}
+
+footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px 0;background:var(--purple-deep);border-radius:var(--radius);margin-top:8px;}
 </style>
 </head>
 <body>
 
 <div class="marquee">
   <div class="marquee__track">
-    <span>NHÓM 6 <span class="accent">★</span> AI AGENT K1 <span class="accent">★</span> VUKP x KESFLOW <span class="accent">★</span> DASHBOARD BTVN <span class="accent">★</span></span>
-    <span>NHÓM 6 <span class="accent">★</span> AI AGENT K1 <span class="accent">★</span> VUKP x KESFLOW <span class="accent">★</span> DASHBOARD BTVN <span class="accent">★</span></span>
+    <span>Nhóm 6 <span class="accent">★</span> DASHBOARD BUỔI 2 <span class="accent">★</span> AI AGENT K1 <span class="accent">★</span> REALTIME <span class="accent">★</span></span>
+    <span>Nhóm 6 <span class="accent">★</span> DASHBOARD BUỔI 2 <span class="accent">★</span> AI AGENT K1 <span class="accent">★</span> REALTIME <span class="accent">★</span></span>
   </div>
 </div>
 
-<div class="wrap">
-<header class="top">
-<h1>📊 Nhóm 6 — Khoá Xây trợ lý cá nhân AI Agent K1</h1>
-<div class="sub">VUKP x KesFlow — Dashboard chấm BTVN theo từng buổi học</div>
-</header>
+<div class="container">
 
-<div class="section-title">🔥 Giữ chuỗi (Streak) — Điểm danh + nộp bài đầy đủ mọi buổi</div>
-<div class="streak-box">
-  <div class="streak-top">
-    <span class="streak-stat" id="streak-stat">Đang tải…</span>
+  <header class="top">
+    <h1>Dashboard BTVN Buổi 2 — Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</h1>
+    <p>Nguồn: Google Sheet sống "Dashboard Data B2" (Nhóm 6) · Phạm vi: chỉ Buổi 2 · <span id="last-updated">Đang tải dữ liệu…</span></p>
+    <div class="badge-row">
+      <span class="badge" id="badge-total">– học viên</span>
+      <span class="badge" id="badge-graded">– bài đã chấm</span>
+      <span class="badge" id="badge-good">– bài Khá/Đạt</span>
+      <span class="badge badge-pulse" id="badge-error1">Lỗi #1: đang tính…</span>
+    </div>
+  </header>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Tổng học viên</div>
+      <div class="kpi-value" id="kpi-total">–</div>
+      <div class="kpi-sub">Nhóm 6</div>
+    </div>
+    <div class="kpi-card c2">
+      <div class="kpi-label">Điểm danh có mặt</div>
+      <div class="kpi-value" id="kpi-attend">–</div>
+      <div class="kpi-sub" id="kpi-attend-sub">–</div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-label">Đã nộp bài</div>
+      <div class="kpi-value" id="kpi-submit">–</div>
+      <div class="kpi-sub" id="kpi-submit-sub">–</div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-label">Đã chấm (feedback)</div>
+      <div class="kpi-value" id="kpi-graded">–</div>
+      <div class="kpi-sub" id="kpi-graded-sub">–</div>
+    </div>
+    <div class="kpi-card c5">
+      <div class="kpi-label">Khá / Đạt</div>
+      <div class="kpi-value" id="kpi-good">–</div>
+      <div class="kpi-sub" id="kpi-good-sub">trong số đã chấm</div>
+    </div>
+    <div class="kpi-card c6">
+      <div class="kpi-label">Chưa đạt</div>
+      <div class="kpi-value" id="kpi-bad">–</div>
+      <div class="kpi-sub" id="kpi-bad-sub">trong số đã chấm</div>
+    </div>
   </div>
-  <div class="streak-sub" id="streak-sub">Tính trên các buổi đã học · nguồn: Dashboard Data B1 + B2 (Google Sheet sống)</div>
-  <div class="streak-list" id="streak-list"><span class="streak-empty">Đang tải dữ liệu điểm danh &amp; nộp bài…</span></div>
-</div>
 
-<div class="grid">
-<a class="card-link" href="dashboard-bt1-nhom6.html">
-<div class="card ready">
-<div class="card-left">
-<div class="buoi-label">Buổi 1</div>
-<div class="buoi-title">Dựng trợ lý AI cá nhân đầu tiên</div>
-</div>
-<span class="badge ready">Xem dashboard →</span>
-</div>
-</a>
+  <div class="insight-box" id="insight-main">
+    <b>Insight chính:</b> đang tính...
+  </div>
 
-<a class="card-link" href="dashboard-bt2-nhom6.html">
-<div class="card ready">
-<div class="card-left">
-<div class="buoi-label">Buổi 2</div>
-<div class="buoi-title">Đóng gói việc lặp lại thành Skill</div>
-</div>
-<span class="badge ready">Xem dashboard →</span>
-</div>
-</a>
+  <div class="section-title">📊 Điểm danh &amp; tình trạng nộp bài <span class="tag">Buổi 2</span></div>
+  <div class="chart-row">
+    <div class="chart-container">
+      <h3>Điểm danh Buổi 2</h3>
+      <canvas id="chart-attend"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Tình trạng nộp BTVN 2</h3>
+      <canvas id="chart-submit"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Xếp loại trong số bài đã chấm</h3>
+      <canvas id="chart-grade"></canvas>
+    </div>
+  </div>
 
-<div class="card pending">
-<div class="card-left">
-<div class="buoi-label">Buổi 3</div>
-<div class="buoi-title">Cowork: đưa AI xuống máy tính</div>
-</div>
-<span class="badge pending">Sắp có</span>
-</div>
+  <div class="section-title">🔍 Lỗi thường gặp khi đóng gói skill <span class="tag" id="tag-badcount">– bài Chưa đạt</span></div>
+  <div class="chart-row">
+    <div class="chart-container wide">
+      <h3>Tần suất các lỗi (tính trên <span id="err-denom">–</span> bài "Chưa đạt")</h3>
+      <canvas id="chart-errors"></canvas>
+    </div>
+  </div>
+  <div class="insight-box" id="insight-errors">
+    <b>Lỗi phổ biến nhất:</b> đang tính...
+  </div>
 
-<div class="card pending">
-<div class="card-left">
-<div class="buoi-label">Buổi 4</div>
-<div class="buoi-title">Kho tri thức với NotebookLM + Gemini</div>
-</div>
-<span class="badge pending">Sắp có</span>
-</div>
+  <div class="section-title">🏆 Bài đóng gói skill mẫu mực để lớp tham khảo <span class="tag" id="tag-goodcount">– bài xếp loại Khá</span></div>
+  <div class="showcase-grid" id="showcase-grid"></div>
 
-<div class="card pending">
-<div class="card-left">
-<div class="buoi-label">Buổi 5</div>
-<div class="buoi-title">Portfolio cá nhân có link thật</div>
-</div>
-<span class="badge pending">Sắp có</span>
-</div>
+  <div class="section-title">📚 Tài liệu chuẩn Anthropic — cập nhật skill đúng chuẩn</div>
+  <div class="resource-grid" id="resource-grid"></div>
 
-<div class="card pending">
-<div class="card-left">
-<div class="buoi-label">Buổi 6</div>
-<div class="buoi-title">Tổng kết</div>
-</div>
-<span class="badge pending">Sắp có</span>
-</div>
-</div>
+  <div class="section-title">⚠️ Trường hợp cần trợ giảng xử lý riêng</div>
+  <div class="table-section">
+    <table class="data-table spcase-table">
+      <thead><tr><th>Mã HV</th><th>Họ tên</th><th>Loại vấn đề</th><th>Ghi chú</th></tr></thead>
+      <tbody id="spcase-body"></tbody>
+    </table>
+  </div>
 
-<footer class="site">Cập nhật theo tiến độ khoá học · thecoolestmarperindawurl</footer>
+  <div class="section-title">📋 Danh sách chi tiết toàn bộ Nhóm 6 <span class="tag" id="tag-studentcount">– học viên</span></div>
+  <div class="table-section">
+    <div class="filters">
+      <input type="text" id="f-search" placeholder="Tìm theo mã HV hoặc tên...">
+      <select id="f-diemdanh" onchange="applyFilters()">
+        <option value="all">Tất cả điểm danh</option>
+        <option value="Có mặt">Có mặt</option>
+        <option value="Vắng">Vắng</option>
+      </select>
+      <select id="f-tinhtrang" onchange="applyFilters()">
+        <option value="all">Tất cả tình trạng nộp</option>
+        <option value="Đã feedback">Đã feedback</option>
+        <option value="Đã nộp">Đã nộp (chưa chấm)</option>
+        <option value="Nộp chậm">Nộp chậm</option>
+        <option value="Chưa mở quyền truy cập">Chưa mở quyền truy cập</option>
+        <option value="none">Chưa nộp</option>
+      </select>
+      <select id="f-xeploai" onchange="applyFilters()">
+        <option value="all">Tất cả xếp loại</option>
+        <option value="Khá">Khá</option>
+        <option value="Đạt">Đạt</option>
+        <option value="Chưa đạt">Chưa đạt</option>
+      </select>
+    </div>
+    <div class="count-info" id="table-count"></div>
+    <table class="data-table" id="main-table">
+      <thead><tr>
+        <th data-field="ma">Mã HV</th>
+        <th data-field="ten">Họ tên</th>
+        <th data-field="diemdanh">Điểm danh</th>
+        <th data-field="tinhtrang">Tình trạng nộp</th>
+        <th data-field="xeploai">Xếp loại</th>
+        <th>Lỗi thường gặp khi đóng gói skill</th>
+        <th>Bài làm</th>
+      </tr></thead>
+      <tbody id="main-table-body"></tbody>
+    </table>
+  </div>
+
+  <footer>Dashboard tạo tự động từ dữ liệu chấm BTVN Buổi 2 · Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</footer>
 </div>
 
 <script>
 // ============================================================================
-// STREAK (Giữ chuỗi): fetch trực tiếp 2 CSV sống "Dashboard Data B1" và
-// "Dashboard Data B2" (cùng workbook Google Sheet của Nhóm 6, đã Publish to
-// web), join theo mã học viên, rồi tính "giữ chuỗi" = điểm danh Có mặt VÀ nộp
-// bài đầy đủ ở TẤT CẢ các buổi đã học tính đến hiện tại (hiện có Buổi 1 + 2).
-// Khi trợ giảng mở thêm tab Dashboard Data B3, B4... chỉ cần thêm URL tương
-// ứng vào mảng SESSION_CSVS bên dưới — không cần sửa logic tính streak.
+// KIẾN TRÚC REALTIME: dashboard này KHÔNG còn nhúng dữ liệu tĩnh. Mỗi lần mở
+// trang, nó fetch trực tiếp CSV_URL (tab "Dashboard Data B2" trong Google
+// Sheet sống của Nhóm 6, đã Publish to web), rồi tự phân loại Tình trạng +
+// đếm lỗi thường gặp bằng logic JS port lại 1:1 từ scripts/extract_data.py
+// (WEAKNESS_MARKERS, ERROR_TAXONOMY, classifyTinhtrang, extractErrors).
+// Khi trợ giảng sửa/thêm dữ liệu trong sheet "Nhóm 6", tab Dashboard Data B2
+// tự cập nhật (công thức mảng sống), và trang này phản ánh thay đổi ngay lần
+// mở/tải lại kế tiếp — không cần chạy lại script hay upload lại file HTML.
+//
+// showcase (bài mẫu xếp loại Khá) vẫn giữ dạng danh sách chọn tay bên dưới,
+// vì "diem_nhan" là đánh giá định tính trợ giảng viết, không có trong CSV.
 // ============================================================================
 
-const SESSION_CSVS = [
-  { buoi: 1, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1274208738&single=true&output=csv" },
-  { buoi: 2, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=182557518&single=true&output=csv" },
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1509201833&single=true&output=csv"; // Thay bằng URL CSV Publish to web thật của tab "Dashboard Data B2" — xem SKILL.md Bước 1.
+
+const WEAKNESS_MARKERS = [
+  "can khac phuc", "can bo sung", "can them", "nen bo sung", "nen them",
+  "han che", "thieu", "chua ro", "khong ro", "chua co", "chua du",
+  "chua nam ro", "chua chinh xac", "sai", "loi",
 ];
 
-function normStr(v){ return String(v||'').trim(); }
+const ERROR_TAXONOMY = [
+  ["Thiếu câu kích hoạt", ["cau kich hoat", "dung khi"]],
+  ["Viết dạng đoạn văn, chưa tách bước", ["danh so", "tach thanh cac buoc", "doan van"]],
+  ["Bước thiếu điểm dừng", ["diem dung", "cho toi khi"]],
+  ["Hai skill trùng việc, chưa tìm việc khác", ["gop hai", "trung viec", "chia doi"]],
+  ["Bám ví dụ mẫu, chưa bám việc thật", ["vi du mau", "viec ban that su lam", "viec that"]],
+  ["Chưa thấy dấu vết chạy thử case khác", ["chay thu"]],
+  ["Trùng lặp nội dung, chưa gộp một chỗ", ["lap lai", "mot cho duy nhat", "mot cho"]],
+];
 
-function isAccessIssueStreak(link, tinhtrang){
-  const norm = (normStr(tinhtrang)+' '+normStr(link)).toLowerCase();
-  return norm.includes('khoá truy cập') || norm.includes('khoa truy cap') || norm.includes('khong truy cap') ||
-         norm.includes('chưa mở quyền') || norm.includes('chua mo quyen') || norm.includes('private');
+// Danh sách bài mẫu xếp loại Khá — chọn tay từ cột xep_loai thật (tab "Dashboard
+// Data B2 - Chi tiet skill"), trích nguyên văn câu nhận xét đã chấm, không suy diễn.
+// Khi có bài mẫu mới ở buổi sau/nhóm khác, sửa mảng này trực tiếp.
+const SHOWCASE = [
+  {
+    ma: "K481", ten: "Nguyễn Quang Vinh", xeploai: "Khá",
+    diem_nhan: "Skill dreame-seeding-patterns | recap-fireflies-notion — câu kích hoạt của skill recap nêu đủ cả việc skill làm gì lẫn tình huống nào thì gọi, lại liệt kê chính những cách nói mà người dùng thật sẽ gõ ra.",
+    link: "https://drive.google.com/drive/folders/15LLZwksUkq6Mn_SIwa2rcW2OdrJexNY8?usp=sharing",
+  },
+  {
+    ma: "K507", ten: "Đào Mai Anh", xeploai: "Khá",
+    diem_nhan: "Skill lich-trinh-du-lich | bua-sang — ở lich-trinh-du-lich bạn còn nói rõ trường hợp nào thì không dùng skill, còn ở bua-sang bạn liệt kê thẳng những cụm chữ người dùng hay gõ khi cần đến nó.",
+    link: "https://drive.google.com/file/d/1mGac4RUKZkRLMJjFjTT7fH9aUAZNS-gk/view?usp=drive_link",
+  },
+  {
+    ma: "K508", ten: "Lê Đức Tài Vũ", xeploai: "Khá",
+    diem_nhan: "Skill vn-stock-dashboard | ke-toan — các thư mục con được dùng đúng vai: chỗ để mã chạy được thì chỉ chứa mã, chỗ để tài liệu tra cứu thì chỉ chứa tài liệu, không nhét lẫn vào nhau.",
+    link: "https://drive.google.com/drive/folders/1r3WGUBgjmXyM1iu_oxMJU_Ue5wZdUPMQ?usp=sharing",
+  },
+  {
+    ma: "K538", ten: "Nguyễn Minh Thu", xeploai: "Khá",
+    diem_nhan: "Skill len-lich-cong-viec | chuan-hoa-data-mkt — phần tra cứu được tách ra thư mục references/ đúng vai, mỗi chỗ dẫn sang tệp phụ đều nói rõ khi nào thì mở, nên máy chỉ đọc thêm đúng lúc cần.",
+    link: "https://drive.google.com/drive/folders/12uIAKuzA2KOY4VQpcsCd4hwsmzr8tFQU?usp=sharing",
+  },
+  {
+    ma: "K555", ten: "Đỗ Bích Ngọc", xeploai: "Khá",
+    diem_nhan: "Skill recap-ted-talk | reading-dashboard — với reading-dashboard, câu kích hoạt còn liệt kê được cả những cách người dùng nói vòng vo mà không dùng đúng từ khoá chính, cùng tình huống chạy lại cho kỳ sau.",
+    link: "https://drive.google.com/drive/folders/1kb1aFI1jMBRKApDTOpISqbGQrjvdaIMO",
+  },
+  {
+    ma: "K586", ten: "Phí Thị Bảo Thoa", xeploai: "Khá",
+    diem_nhan: "Skill jd-writer | cosmetic-formula-analysis — riêng cosmetic-formula-analysis còn nêu rõ skill nhận được đầu vào ở những dạng nào, nên máy có nhiều dấu hiệu cụ thể để nhận đúng lúc cần dùng thay vì đoán mò.",
+    link: "https://drive.google.com/drive/folders/1qYQJte4mQGimMdzzuucDl6IdrroUdMYG?usp=drive_link",
+  },
+];
+
+// Tài liệu chính thức của Anthropic để học viên đối chiếu, cập nhật skill đúng
+// chuẩn — 3 nguồn đã xác thực còn sống (kiểm tra lại khi phục hồi mục này sau
+// khi bị mất trong lần dựng lại dashboard theo kiến trúc 109 HV), không suy đoán.
+const RESOURCES = [
+  { rsrc:"platform.claude.com · Best practices", rtitle:"Skill authoring best practices",
+    rdesc:"Nguyên tắc viết Skill hiệu quả: viết súc tích, cho AI đúng mức độ tự do, luôn test với nhiều model — và quan trọng nhất với lớp mình: xây bộ evaluation (tối thiểu 3 tình huống test) TRƯỚC khi viết tài liệu. Đây đúng là phần đa số bài đang mất điểm nhiều nhất (thiếu minh chứng chạy thử).",
+    url:"https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices" },
+  { rsrc:"platform.claude.com · Overview", rtitle:"Agent Skills — Tổng quan",
+    rdesc:"Cách Skill hoạt động (3 cấp: Metadata → Instructions → Resources), quy định đặt tên &amp; viết description trong frontmatter YAML (name tối đa 64 ký tự viết thường, description tối đa 1024 ký tự) và các lưu ý bảo mật khi đóng gói.",
+    url:"https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview" },
+  { rsrc:"github.com/anthropics/skills", rtitle:"skill-creator — Skill mẫu chính thức",
+    rdesc:"Skill do chính Anthropic viết để tạo &amp; kiểm thử skill khác, có sẵn quy trình từng bước. Dùng để đối chiếu cấu trúc gói, cách đặt tên SKILL.md và cách viết bộ tình huống test đúng chuẩn.",
+    url:"https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md" },
+];
+
+function stripAccents(s){
+  if(s===null||s===undefined) return '';
+  s = String(s).replace(/đ/g,'d').replace(/Đ/g,'D');
+  const nfkd = s.normalize('NFKD');
+  return nfkd.replace(/[̀-ͯ]/g,'').toLowerCase();
 }
 
-// Buổi 1 dùng schema gốc (ma, ten, diemdanh, link, tinhtrang, feedback).
-// Buổi 2 dùng schema mở rộng có thêm cột diemdanh/link/tinhtrang_nop —
-// hai buổi khác tên cột "tình trạng nộp" nên xử lý riêng theo buoi.
-function attendedAndSubmitted(row, buoi){
-  const diemdanh = normStr(row.diemdanh);
-  const attended = diemdanh === 'Có mặt';
-  if(!attended) return false;
-
-  if(buoi === 1){
-    const tinhtrang = normStr(row.tinhtrang);
-    const link = normStr(row.link);
-    if(isAccessIssueStreak(link, tinhtrang)) return false;
-    return ['Đã feedback','Nộp chậm','Đã nộp'].includes(tinhtrang);
-  }
-  // buoi 2 trở đi: coi là "nộp đầy đủ" khi có link hợp lệ (không bị khoá truy cập)
-  const link = normStr(row.link);
-  const tinhtrang = normStr(row.tinhtrang_nop || row.tinhtrang);
-  if(!link) return false;
-  if(isAccessIssueStreak(link, tinhtrang)) return false;
-  return true;
+function sectionGoiY(text){
+  // Feedback Buổi 2 (skill cham-btvn-buoi-2) đi theo khuôn "Đạt / làm tốt:" rồi
+  // "Gợi ý làm tốt hơn:" — khác khuôn 4 phần của Buổi 1. Neo vào "Gợi ý làm tốt
+  // hơn" để chỉ trích lỗi từ phần góp ý, không lẫn phần khen ở trên.
+  const t = String(text||'');
+  const idx = stripAccents(t).indexOf('goi y lam tot hon');
+  return idx !== -1 ? t.slice(idx) : t;
 }
 
-function loadStreak(){
-  const results = [];
-  let loaded = 0;
-  const perBuoi = {};
-
-  SESSION_CSVS.forEach(sess => {
-    Papa.parse(sess.url, {
-      download: true, header: true, skipEmptyLines: true,
-      complete: function(res){
-        const map = {};
-        (res.data||[]).forEach(row => {
-          const ma = normStr(row.ma);
-          if(!ma) return;
-          map[ma] = { ten: normStr(row.ten), ok: attendedAndSubmitted(row, sess.buoi) };
-        });
-        perBuoi[sess.buoi] = map;
-        loaded++;
-        if(loaded === SESSION_CSVS.length) computeStreak(perBuoi);
-      },
-      error: function(){
-        loaded++;
-        if(loaded === SESSION_CSVS.length) computeStreak(perBuoi);
-      },
-    });
-  });
+function classifyTinhtrang(feedback){
+  // Dự phòng khi không có cột xeploai thật trong CSV (xem buildDataset).
+  if(!feedback) return null;
+  const norm = stripAccents(sectionGoiY(feedback));
+  return WEAKNESS_MARKERS.some(m => norm.includes(m)) ? 'Cần bổ sung' : 'Hoàn thành tốt';
 }
 
-function computeStreak(perBuoi){
-  // Buổi 1 (roster đầy đủ nhất) làm nguồn danh sách mã học viên gốc.
-  const baseBuoi = SESSION_CSVS[0].buoi;
-  const base = perBuoi[baseBuoi] || {};
-  const buoiList = SESSION_CSVS.map(s => s.buoi);
+function extractErrors(feedback){
+  if(!feedback) return [];
+  const norm = stripAccents(sectionGoiY(feedback));
+  const clauses = norm.split(/[.;\n]/);
+  const weaknessClauses = clauses.filter(c => WEAKNESS_MARKERS.some(w => c.includes(w)));
+  const searchText = weaknessClauses.join(' ');
+  if(!searchText) return [];
+  return ERROR_TAXONOMY.filter(([, patterns]) => patterns.some(p => searchText.includes(p))).map(([label]) => label);
+}
 
-  const rows = Object.keys(base).map(ma => {
-    const ten = base[ma].ten;
-    let streak = 0;
-    for(const b of buoiList){
-      const rec = (perBuoi[b]||{})[ma];
-      if(rec && rec.ok){ streak++; } else { break; }
+function buildDataset(rawRows){
+  const diemDanhCounter = {};
+  const tinhTrangCounter = {};
+  const xepLoaiCounter = {};
+  const loiCounter = {};
+  const specialCases = [];
+  const students = [];
+
+  rawRows.forEach(row => {
+    const ma = String(row.ma||'').trim();
+    if(!ma) return;
+    const ten = String(row.ten||'').trim();
+    const diemdanh = String(row.diemdanh||'').trim() || null;
+    const link = String(row.link||'').trim() || null;
+    let tinhtrang = String(row.tinhtrang||'').trim() || null;
+    const feedback = String(row.feedback||'').trim() || null;
+
+    const ddKey = diemdanh || 'Không rõ';
+    diemDanhCounter[ddKey] = (diemDanhCounter[ddKey]||0) + 1;
+
+    if(!tinhtrang && feedback) tinhtrang = 'Đã feedback';
+    // Bài đã nộp link nhưng trợ giảng chưa kịp chấm (chưa có tinhtrang lẫn feedback)
+    // — không được tính nhầm vào nhóm "Chưa nộp".
+    if(!tinhtrang && !feedback && link) tinhtrang = 'Đã nộp';
+
+    // Nguồn xếp loại thật ưu tiên cột "xeploai" (Khá/Đạt/Chưa đạt) đã đối chiếu tay
+    // từ tab chấm chi tiết theo từng skill — chỉ suy đoán từ văn bản feedback khi
+    // cột này trống (vd bài chấm ngoài batch chính, xem SKILL.md ghi chú).
+    // Bài "Chưa mở quyền truy cập" chỉ có placeholder ("Khoá truy cập") ở cột
+    // feedback, KHÔNG phải nội dung chấm thật — không được suy đoán xếp loại
+    // hay trích lỗi từ đó, nếu không bài chưa chấm được sẽ lẫn vào nhóm "Hoàn
+    // thành tốt" một cách sai lệch (bug đã phát hiện ở HV khoá truy cập).
+    let xeploai = String(row.xeploai||'').trim() || null;
+    let loi = [];
+    const isUngraded = tinhtrang === 'Chưa mở quyền truy cập';
+    if(feedback && !isUngraded){
+      if(!xeploai) xeploai = classifyTinhtrang(feedback);
+      loi = extractErrors(feedback);
+      loi.forEach(l => { loiCounter[l] = (loiCounter[l]||0) + 1; });
+    } else if(isUngraded){
+      xeploai = null;
     }
-    return { ma, ten, streak };
+
+    const ttKey = tinhtrang || 'None';
+    tinhTrangCounter[ttKey] = (tinhTrangCounter[ttKey]||0) + 1;
+    if(xeploai) xepLoaiCounter[xeploai] = (xepLoaiCounter[xeploai]||0) + 1;
+
+    if(tinhtrang === 'Nộp chậm' || tinhtrang === 'Chưa mở quyền truy cập'){
+      specialCases.push({
+        ma, ten, loai: tinhtrang,
+        ghi_chu: tinhtrang === 'Nộp chậm'
+          ? 'Nộp sau hạn quy định'
+          : 'Link chưa cấp quyền xem, trợ giảng không mở được để chấm',
+      });
+    }
+
+    students.push({ ma, ten, diemdanh, link, tinhtrang, xeploai, loi });
   });
 
-  const total = rows.length;
-  const maxStreak = buoiList.length;
-  const kept = rows.filter(r => r.streak === maxStreak).sort((a,b)=> a.ma.localeCompare(b.ma));
+  const loiSorted = Object.fromEntries(Object.entries(loiCounter).sort((a,b) => b[1]-a[1]));
 
-  document.getElementById('streak-stat').textContent = kept.length + '/' + total + ' học viên';
-  document.getElementById('streak-sub').textContent =
-    'đang giữ chuỗi đủ ' + maxStreak + '/' + maxStreak + ' buổi đã học (điểm danh + nộp bài đầy đủ mỗi buổi) · nguồn: Dashboard Data B1 + B2';
+  const summary = {
+    total_students: students.length,
+    diem_danh: diemDanhCounter,
+    tinh_trang_nop: tinhTrangCounter,
+    xep_loai_da_cham: xepLoaiCounter,
+    loi_thuong_gap: loiSorted,
+  };
 
-  const list = document.getElementById('streak-list');
-  if(!kept.length){
-    list.innerHTML = '<span class="streak-empty">Chưa có học viên nào giữ chuỗi đủ tất cả các buổi.</span>';
-    return;
-  }
-  list.innerHTML = kept.map(k => `<span class="streak-chip"><span class="fire">🔥</span>${k.ma} · ${k.ten}</span>`).join('');
+  return { summary, students, showcase: SHOWCASE, special_cases: specialCases };
 }
 
-loadStreak();
+let DATA = null;
+let charts = {};
+
+function showError(msg){
+  document.getElementById('last-updated').textContent = 'Lỗi tải dữ liệu';
+  document.getElementById('insight-main').innerHTML =
+    '<b>Không tải được dữ liệu sống.</b> ' + msg +
+    ' Kiểm tra lại link Publish to web của tab "Dashboard Data B2" (File → Chia sẻ → Xuất bản lên web trong Google Sheet), hoặc thử tải lại trang.';
+}
+
+function init(){
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      if(!results.data || !results.data.length){
+        showError('CSV trả về rỗng.');
+        return;
+      }
+      DATA = buildDataset(results.data);
+      document.getElementById('last-updated').textContent =
+        'Cập nhật lần cuối: ' + new Date().toLocaleString('vi-VN');
+      renderKPIs();
+      renderCharts();
+      renderShowcase();
+      renderResources();
+      renderSpecialCases();
+      renderTable();
+    },
+    error: function(err){
+      showError(err && err.message ? err.message : String(err));
+    },
+  });
+}
+
+
+// Bảng màu theo brand LANHMAR: tím đậm = tích cực/chính, cam = cảnh báo/cần
+// chú ý, các sắc tím/lavender nhạt hơn cho các trạng thái phụ.
+const COLORS = ['#6A5CFF','#FF7A45','#2D2FEF','#C24418','#8F84FF','#55507A','#B2A4EF'];
+
+function pct(n, d){ return d ? ((n/d)*100).toFixed(1) : '0.0'; }
+
+function renderKPIs(){
+  const s = DATA.summary;
+  const total = s.total_students;
+  const attend = s.diem_danh['Có mặt']||0;
+  const graded = s.tinh_trang_nop['Đã feedback']||0;
+  const late = s.tinh_trang_nop['Nộp chậm']||0;
+  const locked = s.tinh_trang_nop['Chưa mở quyền truy cập']||0;
+  const submittedNotGraded = s.tinh_trang_nop['Đã nộp']||0;
+  const submitted = graded + late + locked + submittedNotGraded;
+  // Khá + Đạt = đạt yêu cầu đầu ra buổi 2 (2 skill đóng gói được); Chưa đạt =
+  // cần làm lại. Fallback 'Hoàn thành tốt'/'Cần bổ sung' chỉ dùng khi cột
+  // xeploai thật trống và phải suy đoán từ văn bản feedback (xem buildDataset).
+  const good = (s.xep_loai_da_cham['Khá']||0) + (s.xep_loai_da_cham['Đạt']||0) + (s.xep_loai_da_cham['Hoàn thành tốt']||0);
+  const bad = (s.xep_loai_da_cham['Chưa đạt']||0) + (s.xep_loai_da_cham['Cần bổ sung']||0);
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-attend').textContent = attend;
+  document.getElementById('kpi-attend-sub').textContent = pct(attend,total)+'% tổng · Vắng '+(s.diem_danh['Vắng']||0);
+  document.getElementById('kpi-submit').textContent = submitted;
+  document.getElementById('kpi-submit-sub').textContent = pct(submitted,total)+'% tổng · '+pct(submitted,attend)+'% trong số có mặt';
+  document.getElementById('kpi-graded').textContent = graded;
+  document.getElementById('kpi-graded-sub').textContent = pct(graded,total)+'% tổng · '+pct(graded,submitted)+'% trong số đã nộp';
+  document.getElementById('kpi-good').textContent = good;
+  document.getElementById('kpi-good-sub').textContent = pct(good,graded)+'% trong số đã chấm (Khá+Đạt)';
+  document.getElementById('kpi-bad').textContent = bad;
+  document.getElementById('kpi-bad-sub').textContent = pct(bad,graded)+'% trong số đã chấm (Chưa đạt)';
+
+  const notSubmittedTotal = total - submitted;
+  const attendNotSubmitted = Math.max(0, attend - submitted);
+  document.getElementById('insight-main').innerHTML =
+    '<b>Insight chính:</b> '+attend+'/'+total+' học viên ('+pct(attend,total)+'%) có mặt Buổi 2, nhưng chỉ '+submitted+' bài ('+pct(submitted,attend)+'% trong số có mặt) nộp BTVN — nghĩa là '+
+    attendNotSubmitted+' học viên có mặt nhưng chưa nộp bài (tổng chưa nộp: '+notSubmittedTotal+'). Trong '+graded+' bài đã chấm, có '+good+' bài ('+pct(good,graded)+'%) đạt Khá/Đạt ngay từ lần nộp đầu — '+
+    pct(bad,graded)+'% còn lại xếp Chưa đạt, cần làm lại.';
+
+  document.getElementById('badge-total').textContent = total+' học viên';
+  document.getElementById('badge-graded').textContent = graded+' bài đã chấm';
+  document.getElementById('badge-good').textContent = good+' bài Khá/Đạt';
+  document.getElementById('tag-studentcount').textContent = total+' học viên';
+  document.getElementById('tag-goodcount').textContent = good+' bài xếp loại Khá';
+  document.getElementById('tag-badcount').textContent = bad+' bài Chưa đạt';
+  document.getElementById('err-denom').textContent = bad;
+}
+
+function renderCharts(){
+  const s = DATA.summary;
+  new Chart(document.getElementById('chart-attend'), {
+    type:'doughnut',
+    data:{ labels:['Có mặt','Vắng'], datasets:[{ data:[s.diem_danh['Có mặt']||0, s.diem_danh['Vắng']||0], backgroundColor:[COLORS[2],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const tt = s.tinh_trang_nop;
+  const submitLabels = ['Đã feedback','Nộp chậm','Chưa mở quyền truy cập','Đã nộp (chưa chấm)','Chưa nộp'];
+  const submitData = [tt['Đã feedback']||0, tt['Nộp chậm']||0, tt['Chưa mở quyền truy cập']||0, tt['Đã nộp']||0, tt['None']||0];
+  new Chart(document.getElementById('chart-submit'), {
+    type:'doughnut',
+    data:{ labels:submitLabels, datasets:[{ data:submitData, backgroundColor:[COLORS[2],COLORS[1],COLORS[4],COLORS[6],'#D6CEF7'], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:10,font:{size:10.5}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const gl = s.xep_loai_da_cham;
+  new Chart(document.getElementById('chart-grade'), {
+    type:'doughnut',
+    data:{ labels:['Khá','Đạt','Chưa đạt'], datasets:[{ data:[gl['Khá']||0, gl['Đạt']||0, gl['Chưa đạt']||0], backgroundColor:[COLORS[2],COLORS[4],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const bad = (s.xep_loai_da_cham['Chưa đạt']||0) + (s.xep_loai_da_cham['Cần bổ sung']||0);
+  const errEntries = Object.entries(s.loi_thuong_gap).sort((a,b)=>b[1]-a[1]);
+  new Chart(document.getElementById('chart-errors'), {
+    type:'bar',
+    data:{ labels:errEntries.map(e=>e[0]), datasets:[{ label:'Số bài mắc lỗi', data:errEntries.map(e=>e[1]), backgroundColor: COLORS[0]+'CC', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> c.parsed.x+' bài ('+pct(c.parsed.x,bad)+'% trong số Chưa đạt)' } } },
+      scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+
+  const errBox = document.getElementById('insight-errors');
+  if(errEntries.length){
+    const top = errEntries[0];
+    const second = errEntries[1];
+    let html = '<b>Lỗi phổ biến nhất:</b> '+top[1]+'/'+bad+' bài ('+pct(top[1],bad)+'%) mắc lỗi <b>'+top[0]+'</b>.';
+    if(second) html += ' Kế tiếp là <b>'+second[0]+'</b> ('+second[1]+' bài, '+pct(second[1],bad)+'%).';
+    errBox.innerHTML = html;
+  } else {
+    errBox.innerHTML = '<b>Lỗi phổ biến nhất:</b> chưa có bài nào xếp Chưa đạt để thống kê lỗi.';
+  }
+  document.getElementById('badge-error1').textContent = errEntries.length ? ('Lỗi #1: '+errEntries[0][0]+' ('+pct(errEntries[0][1],bad)+'%)') : 'Lỗi #1: —';
+}
+
+function renderShowcase(){
+  const grid = document.getElementById('showcase-grid');
+  grid.innerHTML = DATA.showcase.map(s => `
+    <div class="showcase-card">
+      <div class="name">${s.ten}</div>
+      <div class="ma">${s.ma} · ${s.xeploai||'Khá'}</div>
+      <div class="desc">${s.diem_nhan}</div>
+      ${s.link ? `<a href="${s.link}" target="_blank" rel="noopener">Xem bài làm →</a>` : `<span class="noaccess">Bài nộp qua ảnh chụp / không có link công khai</span>`}
+    </div>
+  `).join('');
+}
+
+function renderResources(){
+  const grid = document.getElementById('resource-grid');
+  grid.innerHTML = RESOURCES.map(r => `
+    <div class="resource-card">
+      <div class="rsrc">${r.rsrc}</div>
+      <div class="rtitle">${r.rtitle}</div>
+      <div class="rdesc">${r.rdesc}</div>
+      <a href="${r.url}" target="_blank" rel="noopener">Đọc tài liệu →</a>
+    </div>
+  `).join('');
+}
+
+function renderSpecialCases(){
+  const body = document.getElementById('spcase-body');
+  body.innerHTML = DATA.special_cases.map(c => `
+    <tr>
+      <td>${c.ma}</td>
+      <td>${c.ten}</td>
+      <td><span class="pill ${c.loai==='Nộp chậm'?'late':(c.loai==='Chưa mở quyền truy cập'?'locked':'bs')}">${c.loai}</span></td>
+      <td>${c.ghi_chu}</td>
+    </tr>
+  `).join('');
+}
+
+function pillFor(field, value){
+  if(field==='diemdanh'){
+    return value==='Có mặt' ? `<span class="pill tot">Có mặt</span>` : `<span class="pill absent">Vắng</span>`;
+  }
+  if(field==='tinhtrang'){
+    if(value==='Đã feedback') return `<span class="pill tot">Đã feedback</span>`;
+    if(value==='Nộp chậm') return `<span class="pill late">Nộp chậm</span>`;
+    if(value==='Chưa mở quyền truy cập') return `<span class="pill locked">Khoá quyền</span>`;
+    if(value==='Đã nộp') return `<span class="pill late">Đã nộp (chưa chấm)</span>`;
+    return `<span class="pill none">Chưa nộp</span>`;
+  }
+  if(field==='xeploai'){
+    if(value==='Khá') return `<span class="pill tot">Khá</span>`;
+    if(value==='Đạt') return `<span class="pill tot">Đạt</span>`;
+    if(value==='Chưa đạt') return `<span class="pill bs">Chưa đạt</span>`;
+    if(value==='Hoàn thành tốt') return `<span class="pill tot">Hoàn thành tốt</span>`;
+    if(value==='Cần bổ sung') return `<span class="pill bs">Cần bổ sung</span>`;
+    return '—';
+  }
+  return value||'—';
+}
+
+let sortState = { field:null, dir:'asc' };
+
+function getFiltered(){
+  const q = document.getElementById('f-search').value.trim().toLowerCase();
+  const fd = document.getElementById('f-diemdanh').value;
+  const ft = document.getElementById('f-tinhtrang').value;
+  const fx = document.getElementById('f-xeploai').value;
+  return DATA.students.filter(s => {
+    if(q && !(s.ma.toLowerCase().includes(q) || s.ten.toLowerCase().includes(q))) return false;
+    if(fd!=='all' && s.diemdanh!==fd) return false;
+    if(ft!=='all'){
+      if(ft==='none'){ if(s.tinhtrang!==null) return false; }
+      else if(s.tinhtrang!==ft) return false;
+    }
+    if(fx!=='all' && s.xeploai!==fx) return false;
+    return true;
+  });
+}
+
+function renderTable(){
+  let rows = getFiltered();
+  if(sortState.field){
+    rows = [...rows].sort((a,b)=>{
+      let av = a[sortState.field]||''; let bv = b[sortState.field]||'';
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortState.dir==='asc' ? cmp : -cmp;
+    });
+  }
+  document.getElementById('table-count').textContent = `Hiển thị ${rows.length} / ${DATA.students.length} học viên`;
+  const body = document.getElementById('main-table-body');
+  body.innerHTML = rows.map(s => `
+    <tr>
+      <td>${s.ma}</td>
+      <td>${s.ten}</td>
+      <td>${pillFor('diemdanh', s.diemdanh)}</td>
+      <td>${pillFor('tinhtrang', s.tinhtrang)}</td>
+      <td>${pillFor('xeploai', s.xeploai)}</td>
+      <td>${s.loi.length ? s.loi.map(l=>`<span class="loi-chip">${l}</span>`).join('') : ((s.xeploai==='Khá'||s.xeploai==='Đạt'||s.xeploai==='Hoàn thành tốt') ? '—' : '')}</td>
+      <td>${s.link ? `<a href="${s.link}" target="_blank" rel="noopener">Xem</a>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function applyFilters(){ renderTable(); }
+
+document.getElementById('f-search').addEventListener('input', applyFilters);
+document.querySelectorAll('#main-table thead th[data-field]').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.getAttribute('data-field');
+    if(sortState.field===field){ sortState.dir = sortState.dir==='asc'?'desc':'asc'; }
+    else { sortState.field = field; sortState.dir='asc'; }
+    renderTable();
+  });
+});
+
+init();
 </script>
 </body>
 </html>
