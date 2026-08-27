@@ -449,8 +449,18 @@ function buildDataset(rawRows){
     const isUngraded = tinhtrang === 'Chưa mở quyền truy cập';
     if(feedback && !isUngraded){
       if(!xeploai) xeploai = classifyTinhtrang(feedback);
-      loi = extractErrors(feedback);
-      loi.forEach(l => { loiCounter[l] = (loiCounter[l]||0) + 1; });
+      // Chỉ đếm lỗi cho các bài THẬT SỰ xếp "Chưa đạt"/"Cần bổ sung" — khớp với
+      // mẫu số `bad` dùng để tính % ở renderCharts (chart title "tính trên X bài
+      // Chưa đạt", tooltip "% trong số Chưa đạt"). Trước đây trích lỗi cho MỌI
+      // bài có feedback (kể cả Khá/Đạt có câu "Gợi ý làm tốt hơn" mang tính góp ý
+      // thêm chứ không phải lỗi khiến bài bị đánh Chưa đạt), khiến tử số đếm trên
+      // toàn bộ 48 bài đã chấm nhưng lại chia cho mẫu số chỉ 3 bài Chưa đạt — ra
+      // % ảo vượt 100% (bug thật: "Lỗi #1: Thiếu câu kích hoạt (600.0%)").
+      const isBadGrade = xeploai === 'Chưa đạt' || xeploai === 'Cần bổ sung';
+      if(isBadGrade){
+        loi = extractErrors(feedback);
+        loi.forEach(l => { loiCounter[l] = (loiCounter[l]||0) + 1; });
+      }
     } else if(isUngraded){
       xeploai = null;
     }
