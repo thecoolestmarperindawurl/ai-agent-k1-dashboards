@@ -228,10 +228,10 @@ footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px
     </div>
   </div>
 
-  <div class="section-title">🔍 Lỗi thường gặp khi đóng gói skill <span class="tag" id="tag-badcount">– bài Chưa đạt</span></div>
+  <div class="section-title">🔍 Lỗi thường gặp khi đóng gói skill <span class="tag" id="tag-badcount">– bài đã chấm</span></div>
   <div class="chart-row">
     <div class="chart-container wide">
-      <h3>Tần suất các lỗi (tính trên <span id="err-denom">–</span> bài "Chưa đạt")</h3>
+      <h3>Tần suất các lỗi (tính trên <span id="err-denom">–</span> bài đã chấm)</h3>
       <canvas id="chart-errors"></canvas>
     </div>
   </div>
@@ -419,6 +419,7 @@ function buildDataset(rawRows){
   const loiCounter = {};
   const specialCases = [];
   const students = [];
+  let gradedForErrors = 0;
 
   rawRows.forEach(row => {
     const ma = String(row.ma||'').trim();
@@ -449,18 +450,16 @@ function buildDataset(rawRows){
     const isUngraded = tinhtrang === 'Chưa mở quyền truy cập';
     if(feedback && !isUngraded){
       if(!xeploai) xeploai = classifyTinhtrang(feedback);
-      // Chỉ đếm lỗi cho các bài THẬT SỰ xếp "Chưa đạt"/"Cần bổ sung" — khớp với
-      // mẫu số `bad` dùng để tính % ở renderCharts (chart title "tính trên X bài
-      // Chưa đạt", tooltip "% trong số Chưa đạt"). Trước đây trích lỗi cho MỌI
-      // bài có feedback (kể cả Khá/Đạt có câu "Gợi ý làm tốt hơn" mang tính góp ý
-      // thêm chứ không phải lỗi khiến bài bị đánh Chưa đạt), khiến tử số đếm trên
-      // toàn bộ 48 bài đã chấm nhưng lại chia cho mẫu số chỉ 3 bài Chưa đạt — ra
-      // % ảo vượt 100% (bug thật: "Lỗi #1: Thiếu câu kích hoạt (600.0%)").
-      const isBadGrade = xeploai === 'Chưa đạt' || xeploai === 'Cần bổ sung';
-      if(isBadGrade){
-        loi = extractErrors(feedback);
-        loi.forEach(l => { loiCounter[l] = (loiCounter[l]||0) + 1; });
-      }
+      // Lỗi thường gặp gộp từ TẤT CẢ các bài đã chấm (không riêng bài Chưa đạt) —
+      // theo yêu cầu trợ giảng: mục này phản ánh mọi điểm góp ý "Gợi ý làm tốt
+      // hơn" trong feedback, kể cả với bài xếp Khá/Đạt, để thấy bức tranh lỗi kỹ
+      // thuật chung của cả lớp chứ không chỉ nhóm bài rớt. Mẫu số tương ứng dùng
+      // để tính % ở renderCharts là `gradedForErrors` (= tổng số bài đã chấm ở
+      // nhánh này, xem bên dưới), KHÔNG phải chỉ số bài Chưa đạt — tránh lặp lại
+      // bug % ảo vượt 100% (xem lịch sử: "Lỗi #1: Thiếu câu kích hoạt 600.0%").
+      gradedForErrors += 1;
+      loi = extractErrors(feedback);
+      loi.forEach(l => { loiCounter[l] = (loiCounter[l]||0) + 1; });
     } else if(isUngraded){
       xeploai = null;
     }
@@ -489,6 +488,7 @@ function buildDataset(rawRows){
     tinh_trang_nop: tinhTrangCounter,
     xep_loai_da_cham: xepLoaiCounter,
     loi_thuong_gap: loiSorted,
+    graded_for_errors: gradedForErrors,
   };
 
   return { summary, students, showcase: SHOWCASE, special_cases: specialCases };
@@ -576,8 +576,9 @@ function renderKPIs(){
   document.getElementById('badge-good').textContent = good+' bài Khá/Đạt';
   document.getElementById('tag-studentcount').textContent = total+' học viên';
   document.getElementById('tag-goodcount').textContent = good+' bài xếp loại Khá';
-  document.getElementById('tag-badcount').textContent = bad+' bài Chưa đạt';
-  document.getElementById('err-denom').textContent = bad;
+  const gradedForErrors = s.graded_for_errors || 0;
+  document.getElementById('tag-badcount').textContent = gradedForErrors+' bài đã chấm';
+  document.getElementById('err-denom').textContent = gradedForErrors;
 }
 
 function renderCharts(){
@@ -610,13 +611,17 @@ function renderCharts(){
         tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
   });
 
-  const bad = (s.xep_loai_da_cham['Chưa đạt']||0) + (s.xep_loai_da_cham['Cần bổ sung']||0);
+  // Mẫu số của phần "Lỗi thường gặp" là TỔNG SỐ BÀI ĐÃ CHẤM (không riêng bài
+  // Chưa đạt) — theo yêu cầu trợ giảng: mục này phải phản ánh lỗi kỹ thuật của
+  // cả lớp, không chỉ nhóm bài rớt. `graded_for_errors` được tính đúng trong
+  // buildDataset(), khớp 1:1 với phạm vi bài đã cộng vào loiCounter.
+  const gradedForErrors = s.graded_for_errors || 0;
   const errEntries = Object.entries(s.loi_thuong_gap).sort((a,b)=>b[1]-a[1]);
   new Chart(document.getElementById('chart-errors'), {
     type:'bar',
     data:{ labels:errEntries.map(e=>e[0]), datasets:[{ label:'Số bài mắc lỗi', data:errEntries.map(e=>e[1]), backgroundColor: COLORS[0]+'CC', borderRadius:4 }] },
     options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> c.parsed.x+' bài ('+pct(c.parsed.x,bad)+'% trong số Chưa đạt)' } } },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> c.parsed.x+' bài ('+pct(c.parsed.x,gradedForErrors)+'% trong số đã chấm)' } } },
       scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
   });
 
@@ -624,13 +629,13 @@ function renderCharts(){
   if(errEntries.length){
     const top = errEntries[0];
     const second = errEntries[1];
-    let html = '<b>Lỗi phổ biến nhất:</b> '+top[1]+'/'+bad+' bài ('+pct(top[1],bad)+'%) mắc lỗi <b>'+top[0]+'</b>.';
-    if(second) html += ' Kế tiếp là <b>'+second[0]+'</b> ('+second[1]+' bài, '+pct(second[1],bad)+'%).';
+    let html = '<b>Lỗi phổ biến nhất:</b> '+top[1]+'/'+gradedForErrors+' bài ('+pct(top[1],gradedForErrors)+'%) mắc lỗi <b>'+top[0]+'</b>.';
+    if(second) html += ' Kế tiếp là <b>'+second[0]+'</b> ('+second[1]+' bài, '+pct(second[1],gradedForErrors)+'%).';
     errBox.innerHTML = html;
   } else {
-    errBox.innerHTML = '<b>Lỗi phổ biến nhất:</b> chưa có bài nào xếp Chưa đạt để thống kê lỗi.';
+    errBox.innerHTML = '<b>Lỗi phổ biến nhất:</b> chưa có bài nào được chấm để thống kê lỗi.';
   }
-  document.getElementById('badge-error1').textContent = errEntries.length ? ('Lỗi #1: '+errEntries[0][0]+' ('+pct(errEntries[0][1],bad)+'%)') : 'Lỗi #1: —';
+  document.getElementById('badge-error1').textContent = errEntries.length ? ('Lỗi #1: '+errEntries[0][0]+' ('+pct(errEntries[0][1],gradedForErrors)+'%)') : 'Lỗi #1: —';
 }
 
 function renderShowcase(){
