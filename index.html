@@ -168,7 +168,7 @@ footer.site{
         <div class="streak-hero-stat" id="streak-stat">Đang tải…</div>
       </div>
     </div>
-    <div class="streak-hero-sub" id="streak-sub">Tính trên các buổi đã học · nguồn: Dashboard Data B1 + B2 (Google Sheet sống)</div>
+    <div class="streak-hero-sub" id="streak-sub">Tính trên các buổi đã học · nguồn: Dashboard Data B1 + B2 + B3 (Google Sheet sống)</div>
     <div class="streak-progress-wrap">
       <div class="streak-progress-bar"><div class="streak-progress-fill" id="streak-progress-fill"></div></div>
       <div class="streak-progress-caption" id="streak-progress-caption">Đang tính tỉ lệ giữ chuỗi của cả nhóm…</div>
@@ -201,13 +201,15 @@ footer.site{
 </div>
 </a>
 
-<div class="card pending">
+<a class="card-link" href="dashboard-bt3-nhom6.html">
+<div class="card ready">
 <div class="card-left">
 <div class="buoi-label">Buổi 3</div>
 <div class="buoi-title">Cowork: đưa AI xuống máy tính</div>
 </div>
-<span class="badge pending">Sắp có</span>
+<span class="badge ready">Xem dashboard →</span>
 </div>
+</a>
 
 <div class="card pending">
 <div class="card-left">
@@ -239,24 +241,24 @@ footer.site{
 
 <script>
 // ============================================================================
-// STREAK (Bảng vinh danh giữ chuỗi): fetch trực tiếp 2 CSV sống "Dashboard
-// Data B1" và "Dashboard Data B2" (cùng workbook Google Sheet của Nhóm 6, đã
-// Publish to web), join theo mã học viên, rồi tính "giữ chuỗi" = điểm danh Có
-// mặt VÀ nộp bài đầy đủ (không bị khoá quyền truy cập) ở TẤT CẢ các buổi đã
-// học tính đến hiện tại (hiện có Buổi 1 + 2).
+// STREAK (Bảng vinh danh giữ chuỗi): fetch trực tiếp các CSV sống "Dashboard
+// Data B1", "Dashboard Data B2", "Dashboard Data B3" (cùng workbook Google
+// Sheet của Nhóm 6, đã Publish to web), join theo mã học viên, rồi tính "giữ
+// chuỗi" = điểm danh Có mặt VÀ nộp bài đầy đủ (không bị khoá quyền truy cập)
+// ở TẤT CẢ các buổi đã học tính đến hiện tại (hiện có Buổi 1 + 2 + 3).
 //
-// LƯU Ý DỮ LIỆU: URL CSV của Buổi 2 dưới đây PHẢI khớp với CSV_URL đang dùng
-// trong dashboard-bt2-nhom6.html (gid=1509201833) — đây là bản Dashboard Data
-// B2 hiện hành (kiến trúc realtime 109 học viên). Một bản streak dựng trước
-// đó từng trỏ vào gid=182557518 (tab cũ, kiến trúc "Cả lớp" 46 học viên) — đã
-// lỗi thời và không được dùng lại để tránh tính sai/tính thiếu học viên.
-// Khi trợ giảng mở thêm tab Dashboard Data B3, B4... chỉ cần thêm URL tương
+// LƯU Ý DỮ LIỆU: mỗi URL CSV dưới đây PHẢI khớp với CSV_URL đang dùng trong
+// dashboard-bt{n}-nhom6.html tương ứng (B2 = gid=1509201833, B3 =
+// gid=1739136119, lấy trực tiếp từ bước Publish to web khi build dashboard
+// buổi đó — không dùng lại gid lịch sử/đã lỗi thời).
+// Khi trợ giảng mở thêm tab Dashboard Data B4, B5... chỉ cần thêm URL tương
 // ứng vào mảng SESSION_CSVS bên dưới — không cần sửa logic tính streak.
 // ============================================================================
 
 const SESSION_CSVS = [
   { buoi: 1, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1274208738&single=true&output=csv" },
   { buoi: 2, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1509201833&single=true&output=csv" },
+  { buoi: 3, url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1739136119&single=true&output=csv" },
 ];
 
 function normStr(v){ return String(v||'').trim(); }
@@ -268,8 +270,9 @@ function isAccessIssueStreak(link, tinhtrang){
 }
 
 // Buổi 1 dùng schema gốc (ma, ten, diemdanh, link, tinhtrang, feedback).
-// Buổi 2 dùng schema mở rộng có thêm cột diemdanh/link/tinhtrang_nop —
-// hai buổi khác tên cột "tình trạng nộp" nên xử lý riêng theo buoi.
+// Buổi 2+ dùng schema có thể có thêm cột tinhtrang_nop (nếu có) — fallback
+// sang row.tinhtrang khi cột đó không tồn tại (đúng trường hợp Buổi 3, vốn
+// dùng lại đúng schema gốc ma/ten/diemdanh/link/tinhtrang/feedback).
 function attendedAndSubmitted(row, buoi){
   const diemdanh = normStr(row.diemdanh);
   const attended = diemdanh === 'Có mặt';
@@ -330,7 +333,7 @@ function computeStreak(perBuoi){
 
   if(!Object.keys(base).length){
     document.getElementById('streak-stat').textContent = 'Không tải được dữ liệu';
-    document.getElementById('streak-sub').textContent = 'Kiểm tra lại link Publish to web của Dashboard Data B1/B2, hoặc thử tải lại trang.';
+    document.getElementById('streak-sub').textContent = 'Kiểm tra lại link Publish to web của Dashboard Data B1/B2/B3, hoặc thử tải lại trang.';
     document.getElementById('streak-progress-caption').textContent = '—';
     document.getElementById('streak-honor-wrap').innerHTML =
       '<div class="streak-empty-box">Chưa tải được dữ liệu để xếp bảng vinh danh.</div>';
@@ -354,7 +357,7 @@ function computeStreak(perBuoi){
 
   document.getElementById('streak-stat').textContent = kept.length + ' / ' + total + ' học viên';
   document.getElementById('streak-sub').textContent =
-    'Điểm danh đầy đủ + nộp bài đúng hạn cả ' + maxStreak + '/' + maxStreak + ' buổi đã học · nguồn: Dashboard Data B1 + B2 (cập nhật realtime)';
+    'Điểm danh đầy đủ + nộp bài đúng hạn cả ' + maxStreak + '/' + maxStreak + ' buổi đã học · nguồn: Dashboard Data B1 + B2 + B3 (cập nhật realtime)';
   document.getElementById('streak-progress-fill').style.width = pctKept + '%';
   document.getElementById('streak-progress-caption').textContent =
     pctKept + '% cả nhóm đang giữ chuỗi trọn vẹn — mỗi buổi đều có mặt và nộp bài đầy đủ.';
