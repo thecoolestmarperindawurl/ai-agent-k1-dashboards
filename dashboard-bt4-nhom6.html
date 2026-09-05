@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard BTVN Buổi 4 — Nhóm 6 | AI Agent K1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
+<style>
+/* ===========================================================
+   Branding: tông LANHMAR (lanhmar.id.vn) — cùng bộ token với
+   dashboard-bt1/bt2/bt3-nhom6.html (palette tím/cam/lavender,
+   Montserrat, marquee, hover lift) để đồng bộ giữa các buổi.
+   =========================================================== */
+:root{
+  --purple-deep:#2D2FEF; --purple-mid:#6A5CFF; --purple-soft:#8F84FF;
+  --lav-100:#F3F1FD; --lav-200:#E7E2FB; --lav-300:#D6CEF7; --lav-400:#B2A4EF;
+  --orange:#FF7A45; --orange-dark:#E85D2A; --orange-soft:#FFD8C2;
+  --orange-text:#A6380D; --orange-deep:#C24418;
+  --ink:#241F45; --ink-soft:#55507A; --paper:#FFFDF9; --white:#FFFFFF;
+  --font-display:'Montserrat',system-ui,sans-serif; --font-body:'Montserrat',system-ui,sans-serif;
+
+  --bg-primary:var(--lav-100); --bg-card:var(--white); --bg-header:var(--purple-deep);
+  --text-primary:var(--ink); --text-secondary:var(--ink-soft); --text-on-dark:#ffffff;
+  --c1:var(--purple-deep); --c2:var(--orange); --c3:var(--purple-mid); --c4:var(--orange-deep);
+  --c5:var(--purple-soft); --c6:var(--ink-soft); --c7:var(--lav-400);
+  --positive:var(--purple-deep); --negative:var(--orange-deep); --warn:var(--orange); --neutral:var(--ink-soft);
+  --gap:16px; --radius:18px; --shadow-soft:0 10px 26px rgba(45,47,239,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-body);color:var(--text-primary);line-height:1.5;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(255,122,69,.10), transparent 40%),
+    radial-gradient(circle at 92% 12%, rgba(106,92,255,.14), transparent 45%),
+    var(--bg-primary);
+  min-height:100vh;
+}
+@media (prefers-reduced-motion: reduce){
+  .marquee__track{animation:none;}
+  .badge-pulse{animation:none;}
+  .kpi-card, .showcase-card, .resource-card{transition:none;}
+}
+
+.marquee{overflow:hidden;white-space:nowrap;background:var(--purple-mid);color:#fff;padding:8px 0;}
+.marquee__track{display:inline-flex;gap:40px;animation:marquee 20s linear infinite;}
+.marquee__track span{font-family:var(--font-display);font-weight:700;letter-spacing:.06em;font-size:12.5px;display:inline-flex;align-items:center;gap:10px;}
+.marquee__track span.accent{animation:accent-shimmer 2.4s ease-in-out infinite;}
+@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@keyframes accent-shimmer{0%,100%{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.45);}50%{color:var(--orange-soft);text-shadow:0 0 12px rgba(255,122,69,.85);}}
+
+.container{max-width:1360px;margin:0 auto;padding:var(--gap);}
+
+/* ---------- dashboard nav (Trang chủ / buổi liền trước - liền sau) ---------- */
+.dash-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:var(--gap);}
+.dash-nav-home{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--purple-deep);background:var(--bg-card);border:2px solid var(--lav-300);padding:8px 16px;border-radius:999px;text-decoration:none;transition:transform .2s ease,border-color .2s ease,background .2s ease;}
+.dash-nav-home:hover{border-color:var(--purple-deep);background:var(--lav-100);transform:translateY(-2px);}
+.dash-nav-adjacent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.dash-nav-btn{font-family:var(--font-display);font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;text-decoration:none;white-space:nowrap;transition:transform .2s ease,background .2s ease;}
+.dash-nav-btn.enabled{background:var(--purple-deep);color:#fff;}
+.dash-nav-btn.enabled:hover{background:var(--purple-mid);transform:translateY(-2px);}
+.dash-nav-btn.disabled{background:var(--lav-200);color:var(--ink-soft);cursor:default;pointer-events:none;}
+.dash-nav-current{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);padding:0 4px;}
+
+header.top{background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);box-shadow:var(--shadow-soft);}
+header.top h1{font-family:var(--font-display);font-size:21px;font-weight:700;margin-bottom:4px;}
+header.top p{font-size:13px;color:rgba(255,255,255,.8);}
+.badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.badge{font-family:var(--font-display);font-size:12px;font-weight:600;background:rgba(255,255,255,.16);padding:6px 14px;border-radius:999px;color:#fff;}
+.badge-pulse{animation:badge-pulse 3.2s ease-in-out infinite;}
+@keyframes badge-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,122,69,.45);}50%{box-shadow:0 0 0 6px rgba(255,122,69,0);}}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border-left:4px solid var(--c1);border:2px solid var(--lav-300);border-left-width:4px;transition:transform .25s ease,box-shadow .25s ease;}
+.kpi-card:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(45,47,239,.18);}
+.kpi-card.c2{border-left-color:var(--c3);}
+.kpi-card.c3{border-left-color:var(--c2);}
+.kpi-card.c4{border-left-color:var(--c5);}
+.kpi-card.c5{border-left-color:var(--positive);}
+.kpi-card.c6{border-left-color:var(--negative);}
+.kpi-label{font-family:var(--font-display);font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600;}
+.kpi-value{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+
+.section-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--purple-deep);margin:26px 0 12px;display:flex;align-items:center;gap:10px;}
+.section-title .tag{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--orange-soft);color:var(--orange-text);padding:3px 10px;border-radius:999px;}
+
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);}
+.chart-container h3{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px;}
+.chart-container canvas{max-height:280px;}
+.chart-container.wide{grid-column:span 2;}
+@media (max-width:820px){.chart-container.wide{grid-column:span 1;}}
+
+.insight-box{background:var(--orange-soft);border:1px solid var(--orange-dark);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--orange-text);margin-bottom:var(--gap);}
+.insight-box b{color:var(--orange-deep);}
+
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.showcase-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft);border-top:3px solid var(--purple-deep);border-left:2px solid var(--lav-300);border-right:2px solid var(--lav-300);border-bottom:2px solid var(--lav-300);transition:transform .25s ease,box-shadow .25s ease;}
+.showcase-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(45,47,239,.16);}
+.showcase-card .name{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:2px;color:var(--ink);}
+.showcase-card .ma{font-size:11px;color:var(--text-secondary);margin-bottom:8px;}
+.showcase-card .desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;min-height:64px;}
+.showcase-card a{font-family:var(--font-display);font-size:12px;color:var(--purple-mid);text-decoration:none;font-weight:700;}
+.showcase-card a:hover{text-decoration:underline;color:var(--purple-deep);}
+.showcase-card .noaccess{font-size:12px;color:var(--text-secondary);font-style:italic;}
+
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.resource-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft);border-top:3px solid var(--orange);border-left:2px solid var(--lav-300);border-right:2px solid var(--lav-300);border-bottom:2px solid var(--lav-300);transition:transform .25s ease,box-shadow .25s ease;}
+.resource-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(255,122,69,.18);}
+.resource-card .rsrc{font-family:var(--font-display);font-size:10.5px;color:var(--orange-deep);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:6px;}
+.resource-card .rtitle{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:8px;color:var(--ink);}
+.resource-card .rdesc{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;}
+.resource-card a{font-family:var(--font-display);font-size:12px;color:var(--purple-mid);text-decoration:none;font-weight:700;}
+.resource-card a:hover{text-decoration:underline;color:var(--purple-deep);}
+
+.table-section{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);overflow-x:auto;margin-bottom:var(--gap);}
+.table-section h3{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:12px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.filters select, .filters input{padding:8px 14px;border:2px solid var(--lav-300);border-radius:999px;font-size:12.5px;font-family:var(--font-body);background:#fff;color:var(--ink);transition:border-color .2s ease;}
+.filters select:focus, .filters input:focus{outline:none;border-color:var(--purple-mid);}
+.filters input{min-width:180px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table thead th{text-align:left;padding:9px 10px;border-bottom:2px solid var(--lav-300);color:var(--text-secondary);font-family:var(--font-display);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;}
+.data-table thead th:hover{color:var(--purple-deep);background:var(--lav-100);}
+.data-table tbody td{padding:8px 10px;border-bottom:1px solid var(--lav-200);vertical-align:top;}
+.data-table tbody tr:hover{background:var(--lav-100);}
+.pill{display:inline-block;font-family:var(--font-display);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;}
+.pill.tot{background:rgba(45,47,239,.12);color:var(--purple-deep);}
+.pill.bs{background:var(--orange-soft);color:var(--orange-text);}
+.pill.absent{background:var(--lav-200);color:var(--ink-soft);}
+.pill.late{background:var(--orange-soft);color:var(--orange-deep);}
+.pill.locked{background:var(--lav-300);color:var(--purple-mid);}
+.pill.none{background:var(--lav-200);color:var(--ink-soft);}
+.loi-chip{display:inline-block;font-size:10.5px;background:var(--lav-200);color:var(--ink-soft);padding:2px 8px;border-radius:999px;margin:1px 3px 1px 0;font-weight:600;}
+.count-info{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
+.spcase-table td, .spcase-table th{padding:8px 10px;}
+.snippet{color:var(--ink-soft);}
+
+footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px 0;background:var(--purple-deep);border-radius:var(--radius);margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="marquee">
+  <div class="marquee__track">
+    <span>NHÓM 6 <span class="accent">★</span> DASHBOARD BUỔI 4 <span class="accent">★</span> KHO TRI THỨC VỚI NOTEBOOKLM + GEMINI <span class="accent">★</span> AI AGENT K1 <span class="accent">★</span> REALTIME <span class="accent">★</span></span>
+    <span>NHÓM 6 <span class="accent">★</span> DASHBOARD BUỔI 4 <span class="accent">★</span> KHO TRI THỨC VỚI NOTEBOOKLM + GEMINI <span class="accent">★</span> AI AGENT K1 <span class="accent">★</span> REALTIME <span class="accent">★</span></span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="dash-nav">
+    <a href="index.html" class="dash-nav-home">🏠 Trang chủ</a>
+    <div class="dash-nav-adjacent">
+      <a href="dashboard-bt3-nhom6.html" class="dash-nav-btn enabled">← Buổi 3</a>
+      <span class="dash-nav-current">Buổi 4 / 6</span>
+      <span class="dash-nav-btn disabled">Buổi sau (sắp có) →</span>
+    </div>
+  </div>
+
+  <header class="top">
+    <h1>Dashboard BTVN Buổi 4 — Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</h1>
+    <p>Nguồn: Google Sheet sống "Dashboard Data B4" (Nhóm 6) · Phạm vi: chỉ Buổi 4 — Kho tri thức với NotebookLM + Gemini · Không hiển thị điểm số, chỉ feedback định tính · <span id="last-updated">Đang tải dữ liệu…</span></p>
+    <div class="badge-row">
+      <span class="badge" id="badge-total">– học viên</span>
+      <span class="badge" id="badge-graded">– bài đã feedback</span>
+      <span class="badge" id="badge-ungraded">– bài đã nộp, chưa chấm</span>
+      <span class="badge badge-pulse" id="badge-issue1">Chủ đề cần cải thiện #1: đang tính…</span>
+    </div>
+  </header>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Tổng học viên</div>
+      <div class="kpi-value" id="kpi-total">–</div>
+      <div class="kpi-sub">Nhóm 6</div>
+    </div>
+    <div class="kpi-card c2">
+      <div class="kpi-label">Điểm danh có mặt</div>
+      <div class="kpi-value" id="kpi-attend">–</div>
+      <div class="kpi-sub" id="kpi-attend-sub">–</div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-label">Đã nộp &amp; được feedback</div>
+      <div class="kpi-value" id="kpi-graded">–</div>
+      <div class="kpi-sub" id="kpi-graded-sub">–</div>
+    </div>
+    <div class="kpi-card c6">
+      <div class="kpi-label">Đã nộp, chưa chấm</div>
+      <div class="kpi-value" id="kpi-ungraded">–</div>
+      <div class="kpi-sub" id="kpi-ungraded-sub">cần trợ giảng xử lý riêng</div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-label">TB gợi ý cải thiện / bài</div>
+      <div class="kpi-value" id="kpi-avgtips">–</div>
+      <div class="kpi-sub">trong số bài đã chấm</div>
+    </div>
+    <div class="kpi-card c5">
+      <div class="kpi-label">Chủ đề cải thiện phổ biến #1</div>
+      <div class="kpi-value" id="kpi-topissue">–</div>
+      <div class="kpi-sub" id="kpi-topissue-sub">trong số bài đã chấm</div>
+    </div>
+  </div>
+
+  <div class="insight-box" id="insight-main">
+    <b>Insight chính:</b> đang tính...
+  </div>
+
+  <div class="section-title">📊 Điểm danh &amp; tình trạng nộp bài <span class="tag">Buổi 4</span></div>
+  <div class="chart-row">
+    <div class="chart-container">
+      <h3>Điểm danh Buổi 4</h3>
+      <canvas id="chart-attend"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Tình trạng nộp BTVN 4</h3>
+      <canvas id="chart-submit"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">🔍 Chủ đề cần cải thiện phổ biến (rút từ "Gợi ý làm tốt hơn") <span class="tag" id="tag-issuecount">– lượt nhắc</span></div>
+  <div class="chart-row">
+    <div class="chart-container wide">
+      <h3>Tần suất các chủ đề cần cải thiện (tính trên <span id="issue-denom">–</span> bài đã chấm)</h3>
+      <canvas id="chart-issues"></canvas>
+    </div>
+  </div>
+  <div class="insight-box" id="insight-issues">
+    <b>Chủ đề phổ biến nhất:</b> đang tính...
+  </div>
+
+  <div class="section-title">🏆 Bài có kho tri thức NotebookLM &amp; kiểm chứng citation chuẩn chỉnh để lớp tham khảo <span class="tag">8 bài</span></div>
+  <div class="showcase-grid" id="showcase-grid"></div>
+
+  <div class="section-title">📚 Tài liệu chuẩn — NotebookLM, Gemini Gems &amp; Web search có trích dẫn</div>
+  <div class="resource-grid" id="resource-grid"></div>
+
+  <div class="section-title">⚠️ Trường hợp cần trợ giảng xử lý riêng</div>
+  <div class="table-section">
+    <table class="data-table spcase-table">
+      <thead><tr><th>Mã HV</th><th>Họ tên</th><th>Loại vấn đề</th><th>Ghi chú</th></tr></thead>
+      <tbody id="spcase-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title">📋 Danh sách chi tiết toàn bộ Nhóm 6 <span class="tag" id="tag-studentcount">– học viên</span></div>
+  <div class="table-section">
+    <div class="filters">
+      <input type="text" id="f-search" placeholder="Tìm theo mã HV hoặc tên...">
+      <select id="f-diemdanh" onchange="applyFilters()">
+        <option value="all">Tất cả điểm danh</option>
+        <option value="Có mặt">Có mặt</option>
+        <option value="Vắng">Vắng</option>
+      </select>
+      <select id="f-tinhtrang" onchange="applyFilters()">
+        <option value="all">Tất cả tình trạng nộp</option>
+        <option value="Đã feedback">Đã feedback</option>
+        <option value="Đã nộp">Đã nộp (chưa chấm)</option>
+        <option value="Chưa mở quyền truy cập">Chưa mở quyền truy cập</option>
+        <option value="none">Chưa nộp</option>
+      </select>
+    </div>
+    <div class="count-info" id="table-count"></div>
+    <table class="data-table" id="main-table">
+      <thead><tr>
+        <th data-field="ma">Mã HV</th>
+        <th data-field="ten">Họ tên</th>
+        <th data-field="diemdanh">Điểm danh</th>
+        <th data-field="tinhtrang">Tình trạng nộp</th>
+        <th>Chủ đề cần cải thiện</th>
+        <th>Bài làm</th>
+      </tr></thead>
+      <tbody id="main-table-body"></tbody>
+    </table>
+  </div>
+
+  <footer>Dashboard tạo tự động từ dữ liệu chấm BTVN Buổi 4 (Kho tri thức với NotebookLM + Gemini) · Nhóm 6 · Khoá Xây trợ lý cá nhân AI Agent K1</footer>
+</div>
+
+<script>
+// ============================================================================
+// KIẾN TRÚC REALTIME: dashboard fetch trực tiếp CSV_URL (tab "Dashboard Data
+// B4" trong Google Sheet đích của Nhóm 6, đã Publish to web) mỗi lần mở
+// trang — không nhúng dữ liệu tĩnh. Tab "Dashboard Data B4" lấy dữ liệu bằng
+// công thức QUERY(IMPORTRANGE(...)) sống từ đúng sheet chấm bài gốc (tab
+// "Nhóm 6", cột U:X = Điểm danh/BTVN/Tình trạng/Feedback Buổi 4) — sheet gốc
+// đó CHỈ ĐỌC (không có quyền sửa), nên mọi thay đổi phải đến từ nơi chấm bài
+// gốc, không sửa trực tiếp ở đây.
+//
+// Giống Buổi 3: feedback Buổi 4 dùng khung 2 phần "Đạt / làm tốt:" + "Gợi ý
+// làm tốt hơn:" áp dụng cho MỌI bài đã chấm (không phải nhị phân Hoàn thành
+// tốt/Cần bổ sung), nên dashboard này KHÔNG suy đoán "xếp loại" — thay vào
+// đó đo "TB số gợi ý cải thiện / bài" và rút "chủ đề cải thiện phổ biến" từ
+// riêng phần "Gợi ý làm tốt hơn" bằng keyword taxonomy (đổi từ vựng cho đúng
+// nội dung Buổi 4: chủ đề lớn nhất là thiếu Brief sản phẩm cho Buổi 5).
+//
+// Bản vá bắt buộc #1 (isUngraded guard): dòng có tinhtrang === 'Chưa mở
+// quyền truy cập' KHÔNG được đưa vào thống kê feedback/issue dù cột feedback
+// có nội dung gì — bảo vệ trước khi tồn tại xem lẫn vào "đã chấm". Buổi 4
+// hiện chưa có ca nào bị khoá quyền, nhưng vẫn giữ cờ này để an toàn nếu
+// dữ liệu nguồn thay đổi sau này.
+// Bản vá bắt buộc #3 (mẫu số riêng cho "Chủ đề cải thiện"): issueDenom chỉ
+// đếm đúng số bài thực sự được cộng vào issueCounter (có phần "Gợi ý làm tốt
+// hơn" không rỗng), dùng làm mẫu số duy nhất ở renderCharts/insight-issues —
+// tránh bug % > 100% đã gặp ở Buổi 2 do lệch mẫu số/tử số.
+// ============================================================================
+
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1593626386&single=true&output=csv";
+
+const ISSUE_TAXONOMY = [
+  ["Chưa có Brief sản phẩm (KH mục tiêu / USP / lợi ích / CTA)", ["chua thay phan", "hoan toan vang mat", "bo sung phan brief", "bo sung ngay phan brief", "bo sung du 4 phan", "bo sung du 4 muc", "bo sung 4 phan bat buoc"]],
+  ["Mài sắc USP &amp; CTA cho cụ thể, tránh chung chung", ["mai sac", "mai giua", "mai usp", "mai lai usp"]],
+  ["Nạp thêm tài liệu/nguồn thực tế vào kho tri thức", ["nap them"]],
+  ["Bổ sung ảnh/bằng chứng thao tác cụ thể", ["de trong", "bo sung bang chung", "bo sung anh"]],
+];
+
+// 8 bài có kho tri thức NotebookLM + kiểm chứng citation chuẩn chỉnh nhất để
+// lớp tham khảo — chọn tay từ nội dung "Đạt / làm tốt" trong Dashboard Data
+// B4, không phải để chấm điểm. K543 và K573 là 2 bài hiếm hoi có ĐỦ cả kho
+// tri thức lẫn Brief sản phẩm 4 phần — ưu tiên nêu bật.
+const SHOWCASE = [
+  { ma:"K543", ten:"ĐỖ THỊ MINH TRANG", link:"https://docs.google.com/document/d/1btN0Za2pvH9tvY8aewzBA1lxwdkQjJ5wVEHdwo4C_QI/edit?usp=sharing",
+    diem_nhan:"Hiếm hoi có ĐỦ cả 2 trục: kho tri thức \"Xoài Quán\" với 5 nguồn thật + kiểm chứng citation rõ, VÀ Brief sản phẩm đủ 4 phần (khách hàng mục tiêu, USP, lợi ích chính, CTA) — đúng nguyên liệu cho Buổi 5." },
+  { ma:"K573", ten:"Duyen Nguyen", link:"https://docs.google.com/document/d/1EgDelKA1jn0sQ2VHjFLvMo5CzgirLHbxIBbm-WZMJDY/edit?usp=sharing",
+    diem_nhan:"Trục 1 và Trục 2 đều hoàn chỉnh: kho tri thức từ tài liệu công việc thật (review tuần) + Brief dịch vụ \"Cross-Sale 3N\" đủ 4 phần với USP/CTA cụ thể, có số liệu thật kèm theo." },
+  { ma:"K506", ten:"Trần Bảo", link:"https://docs.google.com/document/d/1G6GROofNpAg70MwLQLG1vdRNoMGTHWJcb_TLnUjuQZ0/edit?tab=t.0",
+    diem_nhan:"Kho tri thức 50 nguồn về Data Storytelling, kiểm chứng citation kỹ qua ảnh panel \"Câu lệnh và nguồn\" liệt kê đúng các file gốc NotebookLM đã tham chiếu." },
+  { ma:"K518", ten:"Bùi Hà", link:"https://docs.google.com/document/d/1gXtBrRz2Fa4RE0g92E0AlmuzeTsdZKsaCpXGscb77ck/edit?usp=sharing",
+    diem_nhan:"Kho tri thức \"Shadowing English\" nạp tới 116 nguồn tài liệu — khối lượng lớn và có bằng chứng citation rõ dẫn đúng nguồn gốc cho từng câu trả lời." },
+  { ma:"K564", ten:"ĐỖ PHÚ LỢI", link:"https://docs.google.com/document/d/1xlOZWPaSVaz8ln6eXeLNABj9c8Tu-euY/edit?usp=sharing&ouid=111045784145571247134&rtpof=true&sd=true",
+    diem_nhan:"Kho tri thức pháp lý PCCC&CNCH, kiểm chứng citation chính xác tới cấp \"điểm b, khoản 2, điều 10, Nghị định 106/2025/NĐ-CP\" — mức độ đối chiếu nguồn rất chặt." },
+  { ma:"K580", ten:"Nguyễn Thị Duyên", link:"https://docs.google.com/document/d/1rSGP99mSLkDUWkiUE9DHdcAMi2htHElUA-I7dNgYNY4/edit?tab=t.0",
+    diem_nhan:"Từ 3 nguồn sách self-help, tạo được cả 3 dạng artifact (mindmap, audio podcast, video) bám sát tài liệu gốc — cho thấy dùng kho tri thức để tổng hợp chứ không chỉ hỏi-đáp." },
+  { ma:"K542", ten:"Huỳnh Nhân Khánh", link:"https://docs.google.com/document/d/1l1GG9yD4omQlL12ObRg0ixXORAxnxDhAjHGbrNEqd4U/edit?usp=sharing",
+    diem_nhan:"Mindmap \"Ứng dụng AI hiệu quả cho cá nhân\" bám sát nguồn, kèm tự đánh giá trung thực về điểm còn ngắn gọn quá — dấu hiệu phản tư tốt về chất lượng bài làm." },
+  { ma:"K501", ten:"Ngô Thị Thanh Thảo", link:"https://docs.google.com/document/d/1ZFkOH3ofjbFYM6SRXUczmzguEEDPd7s8VbYZ39PPs8k/edit?usp=sharing",
+    diem_nhan:"Kho tri thức 6 nguồn về xây kênh TikTok, artifact slide \"Xây dựng uy tín bằng nghệ thuật kể chuyện\" có mục đích sử dụng thực tế rõ ràng (gửi khách hàng)." },
+];
+
+// Tài liệu chính thức đúng chủ đề Buổi 4 (NotebookLM, Gemini Gems, web
+// search có trích dẫn) — đã xác thực qua support.google.com/support.claude.com,
+// không suy đoán.
+const RESOURCES = [
+  { rsrc:"support.google.com · NotebookLM", rtitle:"Learn about NotebookLM",
+    rdesc:"Tổng quan NotebookLM: cách kho tri thức trả lời có trích dẫn trong-dòng (in-line citation) từ đúng nguồn đã nạp — nền tảng của TASK 1-3 trong bài Buổi 4.",
+    url:"https://support.google.com/notebooklm/answer/16164461" },
+  { rsrc:"support.google.com · Gemini Apps", rtitle:"Use Gems in Gemini Apps",
+    rdesc:"Cách tạo Gem tuỳ chỉnh (ví dụ \"trợ lý tư vấn\") lưu sẵn hướng dẫn chi tiết và kết nối với dữ liệu riêng — đúng phần \"Gemini Gem\" nâng cao của Buổi 4.",
+    url:"https://support.google.com/gemini/answer/15146780" },
+  { rsrc:"support.claude.com · Web search", rtitle:"Enable and use web search",
+    rdesc:"Cách Claude tự tạo truy vấn, tổng hợp nhiều nguồn và luôn kèm trích dẫn để xác minh — đúng tinh thần \"tra cứu có dẫn nguồn\" và Deep Research của Buổi 4.",
+    url:"https://support.claude.com/en/articles/10684626-enable-and-use-web-search" },
+];
+
+function stripAccents(s){
+  if(s===null||s===undefined) return '';
+  s = String(s).replace(/đ/g,'d').replace(/Đ/g,'D');
+  const nfkd = s.normalize('NFKD');
+  return nfkd.replace(/[̀-ͯ]/g,'').toLowerCase();
+}
+
+// Cô lập riêng phần "Gợi ý làm tốt hơn" của feedback — chỉ khớp taxonomy và
+// đếm số gợi ý trên phần này, không lẫn với phần "Đạt / làm tốt".
+function suggestionSection(text){
+  const t = String(text||'');
+  const idx = t.indexOf('Gợi ý làm tốt hơn');
+  return idx !== -1 ? t.slice(idx) : '';
+}
+
+function countBullets(text){
+  if(!text) return 0;
+  const matches = text.match(/\n\s*-\s+/g);
+  return matches ? matches.length : (text.trim() ? 1 : 0);
+}
+
+function extractIssues(suggestionText){
+  if(!suggestionText) return [];
+  const norm = stripAccents(suggestionText);
+  return ISSUE_TAXONOMY.filter(([, patterns]) => patterns.some(p => norm.includes(p))).map(([label]) => label);
+}
+
+function buildDataset(rawRows){
+  const diemDanhCounter = {};
+  const tinhTrangCounter = {};
+  const issueCounter = {};
+  const specialCases = [];
+  const students = [];
+  let gradedCount = 0;
+  let ungradedSubmitted = 0;
+  let issueDenom = 0;
+  let totalTips = 0;
+
+  rawRows.forEach(row => {
+    const ma = String(row.ma||'').trim();
+    if(!ma) return;
+    const ten = String(row.ten||'').trim();
+    const diemdanh = String(row.diemdanh||'').trim() || null;
+    const link = String(row.link||'').trim() || null;
+    const tinhtrang = String(row.tinhtrang||'').trim() || null;
+    const feedback = String(row.feedback||'').trim() || null;
+
+    const ddKey = diemdanh || 'Không rõ';
+    diemDanhCounter[ddKey] = (diemDanhCounter[ddKey]||0) + 1;
+
+    const ttKey = tinhtrang || 'None';
+    tinhTrangCounter[ttKey] = (tinhTrangCounter[ttKey]||0) + 1;
+
+    let issues = [];
+    const isUngraded = tinhtrang === 'Chưa mở quyền truy cập';
+    const isGraded = !!feedback && tinhtrang === 'Đã feedback' && !isUngraded;
+    if(isGraded){
+      gradedCount += 1;
+      const sug = suggestionSection(feedback);
+      if(sug){
+        issueDenom += 1;
+        totalTips += countBullets(sug);
+        issues = extractIssues(sug);
+        issues.forEach(i => { issueCounter[i] = (issueCounter[i]||0) + 1; });
+      }
+    }
+
+    // Đã nộp bài (có link) nhưng cột tình trạng còn trống — chưa được chấm/feedback.
+    if(link && !tinhtrang){
+      ungradedSubmitted += 1;
+      specialCases.push({
+        ma, ten, loai: 'Đã nộp, chưa chấm',
+        ghi_chu: 'Học viên đã có link bài làm nhưng cột Tình trạng/Feedback Buổi 4 còn trống — cần trợ giảng chấm bổ sung.',
+      });
+    }
+
+    if(isUngraded){
+      specialCases.push({
+        ma, ten, loai: tinhtrang,
+        ghi_chu: 'Link chưa cấp quyền xem, trợ giảng không mở được để chấm',
+      });
+    }
+
+    students.push({ ma, ten, diemdanh, link, tinhtrang, issues });
+  });
+
+  const issueSorted = Object.fromEntries(Object.entries(issueCounter).sort((a,b) => b[1]-a[1]));
+
+  const summary = {
+    total_students: students.length,
+    diem_danh: diemDanhCounter,
+    tinh_trang_nop: tinhTrangCounter,
+    graded_count: gradedCount,
+    ungraded_submitted: ungradedSubmitted,
+    issue_denom: issueDenom,
+    avg_tips: issueDenom ? (totalTips/issueDenom) : 0,
+    chu_de_cai_thien: issueSorted,
+  };
+
+  return { summary, students, showcase: SHOWCASE, special_cases: specialCases };
+}
+
+let DATA = null;
+
+function showError(msg){
+  document.getElementById('last-updated').textContent = 'Lỗi tải dữ liệu';
+  document.getElementById('insight-main').innerHTML =
+    '<b>Không tải được dữ liệu sống.</b> ' + msg +
+    ' Kiểm tra lại link Publish to web của tab "Dashboard Data B4" (File → Chia sẻ → Xuất bản lên web trong Google Sheet), hoặc thử tải lại trang.';
+}
+
+function init(){
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      if(!results.data || !results.data.length){
+        showError('CSV trả về rỗng.');
+        return;
+      }
+      DATA = buildDataset(results.data);
+      document.getElementById('last-updated').textContent =
+        'Cập nhật lần cuối: ' + new Date().toLocaleString('vi-VN');
+      renderKPIs();
+      renderCharts();
+      renderShowcase();
+      renderResources();
+      renderSpecialCases();
+      renderTable();
+    },
+    error: function(err){
+      showError(err && err.message ? err.message : String(err));
+    },
+  });
+}
+
+const COLORS = ['#6A5CFF','#FF7A45','#2D2FEF','#C24418','#8F84FF','#55507A','#B2A4EF'];
+
+function pct(n, d){ return d ? ((n/d)*100).toFixed(1) : '0.0'; }
+
+function renderKPIs(){
+  const s = DATA.summary;
+  const total = s.total_students;
+  const attend = s.diem_danh['Có mặt']||0;
+  const graded = s.graded_count;
+  const ungraded = s.ungraded_submitted;
+  const avgTips = s.avg_tips.toFixed(1);
+  const issueEntries = Object.entries(s.chu_de_cai_thien).sort((a,b)=>b[1]-a[1]);
+  const topIssue = issueEntries[0];
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-attend').textContent = attend;
+  document.getElementById('kpi-attend-sub').textContent = pct(attend,total)+'% tổng · Vắng '+(s.diem_danh['Vắng']||0);
+  document.getElementById('kpi-graded').textContent = graded;
+  document.getElementById('kpi-graded-sub').textContent = pct(graded,total)+'% tổng số Nhóm 6';
+  document.getElementById('kpi-ungraded').textContent = ungraded;
+  document.getElementById('kpi-ungraded-sub').textContent = ungraded ? (ungraded+' bài đã nộp, chờ chấm') : 'không có bài nào';
+  document.getElementById('kpi-avgtips').textContent = avgTips;
+  document.getElementById('kpi-topissue').textContent = topIssue ? topIssue[1] : 0;
+  document.getElementById('kpi-topissue-sub').textContent = topIssue ? (pct(topIssue[1],s.issue_denom)+'% bài đã chấm') : '—';
+
+  document.getElementById('insight-main').innerHTML =
+    '<b>Insight chính:</b> '+attend+'/'+total+' học viên ('+pct(attend,total)+'%) có mặt Buổi 4, trong đó '+graded+' bài ('+pct(graded,total)+'%) đã nộp và được feedback. '+
+    (topIssue ? 'Chủ đề cần cải thiện phổ biến nhất toàn nhóm là <b>'+topIssue[0]+'</b> — xuất hiện ở '+topIssue[1]+'/'+s.issue_denom+' bài đã chấm ('+pct(topIssue[1],s.issue_denom)+'%), chủ yếu vì bài mới dừng ở phần NotebookLM mà chưa viết Brief sản phẩm cho Buổi 5.' : 'Chưa đủ dữ liệu để tính chủ đề cải thiện phổ biến.')+
+    (ungraded ? (' Có '+ungraded+' bài đã nộp nhưng chưa được chấm, cần trợ giảng bổ sung feedback.') : '');
+
+  document.getElementById('badge-total').textContent = total+' học viên';
+  document.getElementById('badge-graded').textContent = graded+' bài đã feedback';
+  document.getElementById('badge-ungraded').textContent = ungraded+' bài đã nộp, chưa chấm';
+  document.getElementById('badge-issue1').textContent = topIssue ? ('Chủ đề cần cải thiện #1: '+topIssue[0]) : 'Chủ đề cần cải thiện #1: —';
+
+  document.getElementById('tag-studentcount').textContent = total+' học viên';
+  document.getElementById('tag-issuecount').textContent = issueEntries.reduce((a,e)=>a+e[1],0)+' lượt nhắc';
+  document.getElementById('issue-denom').textContent = s.issue_denom;
+}
+
+function renderCharts(){
+  const s = DATA.summary;
+  new Chart(document.getElementById('chart-attend'), {
+    type:'doughnut',
+    data:{ labels:['Có mặt','Vắng'], datasets:[{ data:[s.diem_danh['Có mặt']||0, s.diem_danh['Vắng']||0], backgroundColor:[COLORS[2],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const tt = s.tinh_trang_nop;
+  const submitLabels = ['Đã feedback','Đã nộp (chưa chấm)','Chưa mở quyền truy cập','Chưa nộp'];
+  const submitData = [tt['Đã feedback']||0, s.ungraded_submitted||0, tt['Chưa mở quyền truy cập']||0, tt['None']||0];
+  new Chart(document.getElementById('chart-submit'), {
+    type:'doughnut',
+    data:{ labels:submitLabels, datasets:[{ data:submitData, backgroundColor:[COLORS[2],COLORS[1],COLORS[4],'#D6CEF7'], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:10,font:{size:10.5}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const denom = s.issue_denom;
+  const issueEntries = Object.entries(s.chu_de_cai_thien).sort((a,b)=>b[1]-a[1]);
+  new Chart(document.getElementById('chart-issues'), {
+    type:'bar',
+    data:{ labels:issueEntries.map(e=>e[0]), datasets:[{ label:'Số bài được nhắc', data:issueEntries.map(e=>e[1]), backgroundColor: COLORS[0]+'CC', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> c.parsed.x+' bài ('+pct(c.parsed.x,denom)+'% trong số bài đã chấm)' } } },
+      scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+
+  const errBox = document.getElementById('insight-issues');
+  if(issueEntries.length){
+    const top = issueEntries[0];
+    const second = issueEntries[1];
+    let html = '<b>Chủ đề phổ biến nhất:</b> '+top[1]+'/'+denom+' bài đã chấm ('+pct(top[1],denom)+'%) được nhắc <b>'+top[0]+'</b>.';
+    if(second) html += ' Kế tiếp là <b>'+second[0]+'</b> ('+second[1]+' bài, '+pct(second[1],denom)+'%).';
+    errBox.innerHTML = html;
+  } else {
+    errBox.innerHTML = '<b>Chủ đề phổ biến nhất:</b> chưa đủ dữ liệu để thống kê.';
+  }
+}
+
+function renderShowcase(){
+  const grid = document.getElementById('showcase-grid');
+  grid.innerHTML = DATA.showcase.map(s => `
+    <div class="showcase-card">
+      <div class="name">${s.ten}</div>
+      <div class="ma">${s.ma} · Bài tham khảo</div>
+      <div class="desc">${s.diem_nhan}</div>
+      ${s.link ? `<a href="${s.link}" target="_blank" rel="noopener">Xem bài làm →</a>` : `<span class="noaccess">Bài nộp qua ảnh chụp / không có link công khai</span>`}
+    </div>
+  `).join('');
+}
+
+function renderResources(){
+  const grid = document.getElementById('resource-grid');
+  grid.innerHTML = RESOURCES.map(r => `
+    <div class="resource-card">
+      <div class="rsrc">${r.rsrc}</div>
+      <div class="rtitle">${r.rtitle}</div>
+      <div class="rdesc">${r.rdesc}</div>
+      <a href="${r.url}" target="_blank" rel="noopener">Đọc tài liệu →</a>
+    </div>
+  `).join('');
+}
+
+function renderSpecialCases(){
+  const body = document.getElementById('spcase-body');
+  if(!DATA.special_cases.length){
+    body.innerHTML = '<tr><td colspan="4" class="snippet">Không có trường hợp nào cần xử lý riêng.</td></tr>';
+    return;
+  }
+  body.innerHTML = DATA.special_cases.map(c => `
+    <tr>
+      <td>${c.ma}</td>
+      <td>${c.ten}</td>
+      <td><span class="pill ${c.loai==='Chưa mở quyền truy cập'?'locked':'late'}">${c.loai}</span></td>
+      <td class="snippet">${c.ghi_chu}</td>
+    </tr>
+  `).join('');
+}
+
+function pillFor(field, value, row){
+  if(field==='diemdanh'){
+    return value==='Có mặt' ? `<span class="pill tot">Có mặt</span>` : `<span class="pill absent">Vắng</span>`;
+  }
+  if(field==='tinhtrang'){
+    if(value==='Đã feedback') return `<span class="pill tot">Đã feedback</span>`;
+    if(value==='Chưa mở quyền truy cập') return `<span class="pill locked">Khoá quyền</span>`;
+    if(!value && row && row.link) return `<span class="pill late">Đã nộp (chưa chấm)</span>`;
+    return `<span class="pill none">Chưa nộp</span>`;
+  }
+  return value||'—';
+}
+
+let sortState = { field:null, dir:'asc' };
+
+function getFiltered(){
+  const q = document.getElementById('f-search').value.trim().toLowerCase();
+  const fd = document.getElementById('f-diemdanh').value;
+  const ft = document.getElementById('f-tinhtrang').value;
+  return DATA.students.filter(s => {
+    if(q && !(s.ma.toLowerCase().includes(q) || s.ten.toLowerCase().includes(q))) return false;
+    if(fd!=='all' && s.diemdanh!==fd) return false;
+    if(ft!=='all'){
+      if(ft==='none'){ if(s.tinhtrang!==null || s.link) return false; }
+      else if(ft==='Đã nộp'){ if(s.tinhtrang || !s.link) return false; }
+      else if(s.tinhtrang!==ft) return false;
+    }
+    return true;
+  });
+}
+
+function renderTable(){
+  let rows = getFiltered();
+  if(sortState.field){
+    rows = [...rows].sort((a,b)=>{
+      let av = a[sortState.field]||''; let bv = b[sortState.field]||'';
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortState.dir==='asc' ? cmp : -cmp;
+    });
+  }
+  document.getElementById('table-count').textContent = `Hiển thị ${rows.length} / ${DATA.students.length} học viên`;
+  const body = document.getElementById('main-table-body');
+  body.innerHTML = rows.map(s => `
+    <tr>
+      <td>${s.ma}</td>
+      <td>${s.ten}</td>
+      <td>${pillFor('diemdanh', s.diemdanh)}</td>
+      <td>${pillFor('tinhtrang', s.tinhtrang, s)}</td>
+      <td>${s.issues.length ? s.issues.map(l=>`<span class="loi-chip">${l}</span>`).join('') : '—'}</td>
+      <td>${s.link ? `<a href="${s.link}" target="_blank" rel="noopener">Xem</a>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function applyFilters(){ renderTable(); }
+
+document.getElementById('f-search').addEventListener('input', applyFilters);
+document.querySelectorAll('#main-table thead th[data-field]').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.getAttribute('data-field');
+    if(sortState.field===field){ sortState.dir = sortState.dir==='asc'?'desc':'asc'; }
+    else { sortState.field = field; sortState.dir='asc'; }
+    renderTable();
+  });
+});
+
+init();
+</script>
+</body>
+</html>
