@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bu&#7893;i 7 &mdash; T&#7893;ng k&#7871;t &amp; T&#432;&#7901;ng tri &acirc;n | Nh&oacute;m 6 | AI Agent K1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<style>
+
+/* ===========================================================
+   Branding: chuyển theo tông LANHMAR (lanhmar.id.vn) — palette
+   tím/cam + nền lavender + Montserrat, giữ nguyên bố cục dữ
+   liệu gốc (KPI/biểu đồ/bảng) để không ảnh hưởng khả năng đọc.
+   =========================================================== */
+:root{
+  --purple-deep:#2D2FEF; --purple-mid:#6A5CFF; --purple-soft:#8F84FF;
+  --lav-100:#F3F1FD; --lav-200:#E7E2FB; --lav-300:#D6CEF7; --lav-400:#B2A4EF;
+  --orange:#FF7A45; --orange-dark:#E85D2A; --orange-soft:#FFD8C2;
+  --orange-text:#A6380D; --orange-deep:#C24418;
+  --ink:#241F45; --ink-soft:#55507A; --paper:#FFFDF9; --white:#FFFFFF;
+  --font-display:'Montserrat',system-ui,sans-serif; --font-body:'Montserrat',system-ui,sans-serif;
+
+  --bg-primary:var(--lav-100); --bg-card:var(--white); --bg-header:var(--purple-deep);
+  --text-primary:var(--ink); --text-secondary:var(--ink-soft); --text-on-dark:#ffffff;
+  --c1:var(--purple-deep); --c2:var(--orange); --c3:var(--purple-mid); --c4:var(--orange-deep);
+  --c5:var(--purple-soft); --c6:var(--ink-soft); --c7:var(--lav-400);
+  --positive:var(--purple-deep); --negative:var(--orange-deep); --warn:var(--orange); --neutral:var(--ink-soft);
+  --gap:16px; --radius:18px; --shadow-soft:0 10px 26px rgba(45,47,239,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-body);color:var(--text-primary);line-height:1.5;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(255,122,69,.10), transparent 40%),
+    radial-gradient(circle at 92% 12%, rgba(106,92,255,.14), transparent 45%),
+    var(--bg-primary);
+  min-height:100vh;
+}
+@media (prefers-reduced-motion: reduce){
+  .marquee__track{animation:none;}
+  .badge-pulse{animation:none;}
+  .kpi-card, .showcase-card, .btn-like{transition:none;}
+}
+
+/* ---------- marquee ticker (chữ ký thương hiệu LANHMAR) ---------- */
+.marquee{overflow:hidden;white-space:nowrap;background:var(--purple-mid);color:#fff;padding:8px 0;}
+.marquee__track{display:inline-flex;gap:40px;animation:marquee 20s linear infinite;}
+.marquee__track span{font-family:var(--font-display);font-weight:700;letter-spacing:.06em;font-size:12.5px;display:inline-flex;align-items:center;gap:10px;}
+.marquee__track span.accent{animation:accent-shimmer 2.4s ease-in-out infinite;}
+@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@keyframes accent-shimmer{0%,100%{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.45);}50%{color:var(--orange-soft);text-shadow:0 0 12px rgba(255,122,69,.85);}}
+
+.container{max-width:1360px;margin:0 auto;padding:var(--gap);}
+header.top{background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);box-shadow:var(--shadow-soft);}
+header.top h1{font-family:var(--font-display);font-size:21px;font-weight:700;margin-bottom:4px;}
+header.top p{font-size:13px;color:rgba(255,255,255,.8);}
+.badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.badge{font-family:var(--font-display);font-size:12px;font-weight:600;background:rgba(255,255,255,.16);padding:6px 14px;border-radius:999px;color:#fff;}
+.badge-pulse{animation:badge-pulse 3.2s ease-in-out infinite;}
+@keyframes badge-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,122,69,.45);}50%{box-shadow:0 0 0 6px rgba(255,122,69,0);}}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border-left:4px solid var(--c1);border:2px solid var(--lav-300);border-left-width:4px;transition:transform .25s ease,box-shadow .25s ease;}
+.kpi-card:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(45,47,239,.18);}
+.kpi-card.c2{border-left-color:var(--c3);}
+.kpi-card.c3{border-left-color:var(--c2);}
+.kpi-card.c4{border-left-color:var(--c5);}
+.kpi-card.c5{border-left-color:var(--positive);}
+.kpi-card.c6{border-left-color:var(--negative);}
+.kpi-label{font-family:var(--font-display);font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600;}
+.kpi-value{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+
+.section-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--purple-deep);margin:26px 0 12px;display:flex;align-items:center;gap:10px;}
+.section-title .tag{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--orange-soft);color:var(--orange-text);padding:3px 10px;border-radius:999px;}
+
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);}
+.chart-container h3{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px;}
+.chart-container canvas{max-height:280px;}
+.chart-container.wide{grid-column:span 2;}
+@media (max-width:820px){.chart-container.wide{grid-column:span 1;}}
+
+.insight-box{background:var(--orange-soft);border:1px solid var(--orange-dark);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--orange-text);margin-bottom:var(--gap);}
+.insight-box b{color:var(--orange-deep);}
+
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.showcase-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft);border-top:3px solid var(--purple-deep);border-left:2px solid var(--lav-300);border-right:2px solid var(--lav-300);border-bottom:2px solid var(--lav-300);transition:transform .25s ease,box-shadow .25s ease;}
+.showcase-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(45,47,239,.16);}
+.showcase-card .name{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:2px;color:var(--ink);}
+.showcase-card .ma{font-size:11px;color:var(--text-secondary);margin-bottom:8px;}
+.showcase-card .desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;min-height:64px;}
+.showcase-card a{font-family:var(--font-display);font-size:12px;color:var(--purple-mid);text-decoration:none;font-weight:700;}
+.showcase-card a:hover{text-decoration:underline;color:var(--purple-deep);}
+.showcase-card .noaccess{font-size:12px;color:var(--text-secondary);font-style:italic;}
+
+.table-section{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);overflow-x:auto;margin-bottom:var(--gap);}
+.table-section h3{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:12px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.filters select, .filters input{padding:8px 14px;border:2px solid var(--lav-300);border-radius:999px;font-size:12.5px;font-family:var(--font-body);background:#fff;color:var(--ink);transition:border-color .2s ease;}
+.filters select:focus, .filters input:focus{outline:none;border-color:var(--purple-mid);}
+.filters input{min-width:180px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table thead th{text-align:left;padding:9px 10px;border-bottom:2px solid var(--lav-300);color:var(--text-secondary);font-family:var(--font-display);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;}
+.data-table thead th:hover{color:var(--purple-deep);background:var(--lav-100);}
+.data-table tbody td{padding:8px 10px;border-bottom:1px solid var(--lav-200);vertical-align:top;}
+.data-table tbody tr:hover{background:var(--lav-100);}
+.pill{display:inline-block;font-family:var(--font-display);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;}
+.pill.tot{background:rgba(45,47,239,.12);color:var(--purple-deep);}
+.pill.bs{background:var(--orange-soft);color:var(--orange-text);}
+.pill.absent{background:var(--lav-200);color:var(--ink-soft);}
+.pill.late{background:var(--orange-soft);color:var(--orange-deep);}
+.pill.locked{background:var(--lav-300);color:var(--purple-mid);}
+.pill.none{background:var(--lav-200);color:var(--ink-soft);}
+.loi-chip{display:inline-block;font-size:10.5px;background:var(--lav-200);color:var(--ink-soft);padding:2px 8px;border-radius:999px;margin:1px 3px 1px 0;font-weight:600;}
+.count-info{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
+.spcase-table td, .spcase-table th{padding:8px 10px;}
+
+footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px 0;background:var(--purple-deep);border-radius:var(--radius);margin-top:8px;}
+
+
+/* ---------- dashboard nav (Trang chu / buoi lien truoc - lien sau) ---------- */
+.dash-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:var(--gap);}
+.dash-nav-home{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--purple-deep);background:var(--bg-card);border:2px solid var(--lav-300);padding:8px 16px;border-radius:999px;text-decoration:none;transition:transform .2s ease,border-color .2s ease,background .2s ease;}
+.dash-nav-home:hover{border-color:var(--purple-deep);background:var(--lav-100);transform:translateY(-2px);}
+.dash-nav-adjacent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.dash-nav-btn{font-family:var(--font-display);font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;text-decoration:none;white-space:nowrap;transition:transform .2s ease,background .2s ease;}
+.dash-nav-btn.enabled{background:var(--purple-deep);color:#fff;}
+.dash-nav-btn.enabled:hover{background:var(--purple-mid);transform:translateY(-2px);}
+.dash-nav-btn.disabled{background:var(--lav-200);color:var(--ink-soft);cursor:default;pointer-events:none;}
+.dash-nav-current{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);padding:0 4px;}
+/* ---------- ghi chu buoi bonus ---------- */
+.note-box{background:var(--lav-100);border:2px dashed var(--purple-soft);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--ink-soft);margin-bottom:var(--gap);}
+.note-box b{color:var(--purple-deep);}
+
+
+/* ---------- trang tong ket buoi 7 ---------- */
+.wrap-hero{background:linear-gradient(135deg,var(--purple-deep),var(--orange));color:#fff;border-radius:var(--radius);padding:30px 28px;box-shadow:var(--shadow-soft);margin-bottom:var(--gap);}
+.wrap-hero h2{font-family:var(--font-display);font-size:24px;font-weight:800;margin-bottom:8px;}
+.wrap-hero p{font-size:13.5px;color:rgba(255,255,255,.92);max-width:760px;}
+.journey{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.jcard{background:var(--bg-card);border:2px solid var(--lav-300);border-top:3px solid var(--purple-deep);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-soft);text-decoration:none;color:inherit;display:block;transition:transform .25s ease,box-shadow .25s ease;}
+.jcard:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(45,47,239,.18);}
+.jcard.self{border-top-color:var(--orange);background:var(--lav-100);}
+.jnum{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange-text);background:var(--orange-soft);padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:8px;}
+.jname{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;}
+.jgo{font-family:var(--font-display);font-size:11.5px;font-weight:700;color:var(--purple-mid);margin-top:8px;display:block;}
+.wall-card{background:var(--bg-card);border:2px solid var(--lav-300);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);margin-bottom:var(--gap);}
+.wall-frame{position:relative;width:100%;height:78vh;min-height:520px;border:2px solid var(--lav-200);border-radius:14px;overflow:hidden;background:var(--lav-100);}
+.wall-frame iframe{width:100%;height:100%;border:0;display:block;}
+.wall-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+.btn-like{font-family:var(--font-display);font-size:12.5px;font-weight:700;padding:10px 18px;border-radius:999px;text-decoration:none;background:var(--purple-deep);color:#fff;transition:transform .2s ease,background .2s ease;}
+.btn-like:hover{background:var(--purple-mid);transform:translateY(-2px);}
+.btn-like.ghost{background:var(--bg-card);color:var(--purple-deep);border:2px solid var(--lav-300);}
+.wall-hint{font-size:12px;color:var(--text-secondary);}
+
+</style>
+</head>
+<body>
+<div class="marquee">
+  <div class="marquee__track">
+    <span>Nh&#243;m 6 <span class="accent">&#9733;</span> DASHBOARD BU&#7892;I 7 <span class="accent">&#9733;</span> T&#7892;NG K&#7870;T KHO&#193; <span class="accent">&#9733;</span> AI AGENT K1 <span class="accent">&#9733;</span></span>
+    <span>Nh&#243;m 6 <span class="accent">&#9733;</span> DASHBOARD BU&#7892;I 7 <span class="accent">&#9733;</span> T&#7892;NG K&#7870;T KHO&#193; <span class="accent">&#9733;</span> AI AGENT K1 <span class="accent">&#9733;</span></span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="dash-nav">
+    <a href="index.html" class="dash-nav-home">&#127968; Trang ch&#7911;</a>
+    <div class="dash-nav-adjacent">
+      <a href="dashboard-bt6-nhom6.html" class="dash-nav-btn enabled">&larr; Bu&#7893;i 6</a>
+      <span class="dash-nav-current">Bu&#7893;i 7 / 7</span>
+      <span class="dash-nav-btn disabled">H&#7871;t kho&#225; &#127891; &rarr;</span>
+    </div>
+  </div>
+
+  <header class="top">
+    <h1>Bu&#7893;i 7 &mdash; T&#7893;ng k&#7871;t kho&aacute; &middot; Nh&oacute;m 6 &middot; X&acirc;y tr&#7907; l&yacute; c&aacute; nh&acirc;n AI Agent K1</h1>
+    <p>Bu&#7893;i cu&#7889;i c&#7911;a kho&aacute; &mdash; n&#7889;i 6 bu&#7893;i tr&#432;&#7899;c th&agrave;nh m&#7897;t h&#7879; th&#7889;ng, d&ugrave;ng AI soi l&#7841;i ch&iacute;nh m&igrave;nh v&agrave; n&acirc;ng v&#7883; th&#7871; &#7913;ng tuy&#7875;n.</p>
+    <div class="badge-row">
+      <span class="badge">7 bu&#7893;i &middot; 1 h&#7879; th&#7889;ng</span>
+      <span class="badge">Kh&ocirc;ng c&oacute; BTVN ch&#7845;m &#273;i&#7875;m</span>
+      <span class="badge badge-pulse">T&#432;&#7901;ng tri &acirc;n &#273;ang m&#7903;</span>
+    </div>
+  </header>
+
+  <div class="note-box">
+    <b>V&igrave; sao trang n&agrave;y kh&ocirc;ng c&oacute; dashboard feedback?</b> Bu&#7893;i 7 l&agrave; bu&#7893;i t&#7893;ng k&#7871;t, l&#7899;p kh&ocirc;ng n&#7897;p b&agrave;i t&#7853;p v&#7873; nh&agrave; n&ecirc;n kh&ocirc;ng c&oacute; d&#7919; li&#7879;u ch&#7845;m &#273;&#7875; th&#7889;ng k&ecirc;. Thay v&agrave;o &#273;&oacute;, ph&#7847;n ch&iacute;nh c&#7911;a trang l&agrave; <b>c&#7843;m nh&#7853;n sau kho&aacute; h&#7885;c</b> do ch&iacute;nh h&#7885;c vi&ecirc;n vi&#7871;t &mdash; T&#432;&#7901;ng tri &acirc;n b&ecirc;n d&#432;&#7899;i c&#7853;p nh&#7853;t tr&#7921;c ti&#7871;p t&#7915; form, kh&ocirc;ng qua ch&#7881;nh s&#7917;a.
+  </div>
+
+  <div class="wrap-hero">
+    <h2>H&agrave;nh tr&igrave;nh 7 bu&#7893;i c&#7911;a Nh&oacute;m 6</h2>
+    <p>T&#7915; c&acirc;u l&#7879;nh &#273;&#7847;u ti&ecirc;n cho tr&#7907; l&yacute; c&aacute; nh&acirc;n, qua skill t&aacute;i s&#7917; d&#7909;ng, Cowork tr&ecirc;n m&aacute;y t&iacute;nh, kho tri th&#7913;c c&oacute; d&#7851;n ngu&#7891;n, bu&#7893;i bonus vibe code App Script, cho t&#7899;i m&#7897;t trang portfolio c&oacute; link th&#7853;t &mdash; b&#7845;m v&agrave;o t&#7915;ng bu&#7893;i &#273;&#7875; xem l&#7841;i dashboard.</p>
+  </div>
+
+  <div class="journey">
+    <a class="jcard" href="dashboard-bt1-nhom6.html">
+      <span class="jnum">Bu&#7893;i 1</span>
+      <span class="jname">D&#7921;ng tr&#7907; l&yacute; AI c&aacute; nh&acirc;n &#273;&#7847;u ti&ecirc;n</span>
+      <span class="jgo">Xem dashboard &rarr;</span>
+    </a>
+    <a class="jcard" href="dashboard-bt2-nhom6.html">
+      <span class="jnum">Bu&#7893;i 2</span>
+      <span class="jname">&#272;&oacute;ng g&oacute;i vi&#7879;c l&#7863;p l&#7841;i th&agrave;nh Skill</span>
+      <span class="jgo">Xem dashboard &rarr;</span>
+    </a>
+    <a class="jcard" href="dashboard-bt3-nhom6.html">
+      <span class="jnum">Bu&#7893;i 3</span>
+      <span class="jname">Cowork: &#273;&#432;a AI xu&#7889;ng m&aacute;y t&iacute;nh</span>
+      <span class="jgo">Xem dashboard &rarr;</span>
+    </a>
+    <a class="jcard" href="dashboard-bt4-nhom6.html">
+      <span class="jnum">Bu&#7893;i 4</span>
+      <span class="jname">Kho tri th&#7913;c v&#7899;i NotebookLM + Gemini</span>
+      <span class="jgo">Xem dashboard &rarr;</span>
+    </a>
+    <a class="jcard" href="dashboard-bt5-nhom6.html">
+      <span class="jnum">Bu&#7893;i 5</span>
+      <span class="jname">Bonus: Vibe code App Script c&ugrave;ng Gemini &amp; b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871;</span>
+      <span class="jgo">Xem dashboard &rarr;</span>
+    </a>
+    <a class="jcard" href="dashboard-bt6-nhom6.html">
+      <span class="jnum">Bu&#7893;i 6</span>
+      <span class="jname">Portfolio c&aacute; nh&acirc;n c&oacute; link th&#7853;t</span>
+      <span class="jgo">Xem dashboard &rarr;</span>
+    </a>
+    <div class="jcard self">
+      <span class="jnum">Bu&#7893;i 7 &middot; b&#7841;n &#273;ang &#7903; &#273;&acirc;y</span>
+      <span class="jname">T&#7893;ng k&#7871;t &mdash; T&#432;&#7901;ng tri &acirc;n</span>
+      <span class="jgo">Kh&ocirc;ng c&oacute; BTVN ch&#7845;m &#273;i&#7875;m</span>
+    </div>
+  </div>
+
+  <div class="section-title">&#128153; C&#7843;m nh&#7853;n sau kho&aacute; h&#7885;c &mdash; T&#432;&#7901;ng tri &acirc;n <span class="tag">C&#7853;p nh&#7853;t tr&#7921;c ti&#7871;p</span></div>
+  <div class="wall-card">
+    <div class="wall-frame">
+      <iframe src="https://gui-thay-hung.netlify.app/" title="T&#432;&#7901;ng tri &acirc;n - AI Agent K1" loading="lazy" referrerpolicy="no-referrer"></iframe>
+    </div>
+    <div class="wall-actions">
+      <a class="btn-like" href="https://gui-thay-hung.netlify.app/" target="_blank" rel="noopener">M&#7903; T&#432;&#7901;ng tri &acirc;n &#7903; tab ri&ecirc;ng &rarr;</a>
+      <a class="btn-like ghost" href="index.html">V&#7873; trang ch&#7911;</a>
+      <span class="wall-hint">T&#432;&#7901;ng t&#7921; l&agrave;m m&#7899;i m&#7895;i 8 gi&acirc;y. N&#7871;u khung b&ecirc;n tr&ecirc;n kh&ocirc;ng hi&#7879;n, b&#7845;m n&uacute;t m&#7903; tab ri&ecirc;ng.</span>
+    </div>
+  </div>
+
+  <footer>Trang t&#7893;ng k&#7871;t Bu&#7893;i 7 &middot; Nh&oacute;m 6 &middot; Kho&aacute; X&acirc;y tr&#7907; l&yacute; c&aacute; nh&acirc;n AI Agent K1 (VUKP x KesFlow)</footer>
+</div>
+</body>
+</html>
