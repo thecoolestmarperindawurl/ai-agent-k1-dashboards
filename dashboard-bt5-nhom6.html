@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard BTVN Bu&#7893;i 5 &mdash; Nh&#243;m 6 | AI Agent K1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
+<style>
+
+/* ===========================================================
+   Branding: chuyển theo tông LANHMAR (lanhmar.id.vn) — palette
+   tím/cam + nền lavender + Montserrat, giữ nguyên bố cục dữ
+   liệu gốc (KPI/biểu đồ/bảng) để không ảnh hưởng khả năng đọc.
+   =========================================================== */
+:root{
+  --purple-deep:#2D2FEF; --purple-mid:#6A5CFF; --purple-soft:#8F84FF;
+  --lav-100:#F3F1FD; --lav-200:#E7E2FB; --lav-300:#D6CEF7; --lav-400:#B2A4EF;
+  --orange:#FF7A45; --orange-dark:#E85D2A; --orange-soft:#FFD8C2;
+  --orange-text:#A6380D; --orange-deep:#C24418;
+  --ink:#241F45; --ink-soft:#55507A; --paper:#FFFDF9; --white:#FFFFFF;
+  --font-display:'Montserrat',system-ui,sans-serif; --font-body:'Montserrat',system-ui,sans-serif;
+
+  --bg-primary:var(--lav-100); --bg-card:var(--white); --bg-header:var(--purple-deep);
+  --text-primary:var(--ink); --text-secondary:var(--ink-soft); --text-on-dark:#ffffff;
+  --c1:var(--purple-deep); --c2:var(--orange); --c3:var(--purple-mid); --c4:var(--orange-deep);
+  --c5:var(--purple-soft); --c6:var(--ink-soft); --c7:var(--lav-400);
+  --positive:var(--purple-deep); --negative:var(--orange-deep); --warn:var(--orange); --neutral:var(--ink-soft);
+  --gap:16px; --radius:18px; --shadow-soft:0 10px 26px rgba(45,47,239,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-body);color:var(--text-primary);line-height:1.5;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(255,122,69,.10), transparent 40%),
+    radial-gradient(circle at 92% 12%, rgba(106,92,255,.14), transparent 45%),
+    var(--bg-primary);
+  min-height:100vh;
+}
+@media (prefers-reduced-motion: reduce){
+  .marquee__track{animation:none;}
+  .badge-pulse{animation:none;}
+  .kpi-card, .showcase-card, .btn-like{transition:none;}
+}
+
+/* ---------- marquee ticker (chữ ký thương hiệu LANHMAR) ---------- */
+.marquee{overflow:hidden;white-space:nowrap;background:var(--purple-mid);color:#fff;padding:8px 0;}
+.marquee__track{display:inline-flex;gap:40px;animation:marquee 20s linear infinite;}
+.marquee__track span{font-family:var(--font-display);font-weight:700;letter-spacing:.06em;font-size:12.5px;display:inline-flex;align-items:center;gap:10px;}
+.marquee__track span.accent{animation:accent-shimmer 2.4s ease-in-out infinite;}
+@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@keyframes accent-shimmer{0%,100%{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.45);}50%{color:var(--orange-soft);text-shadow:0 0 12px rgba(255,122,69,.85);}}
+
+.container{max-width:1360px;margin:0 auto;padding:var(--gap);}
+header.top{background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));color:var(--text-on-dark);padding:22px 26px;border-radius:var(--radius);margin-bottom:var(--gap);box-shadow:var(--shadow-soft);}
+header.top h1{font-family:var(--font-display);font-size:21px;font-weight:700;margin-bottom:4px;}
+header.top p{font-size:13px;color:rgba(255,255,255,.8);}
+.badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.badge{font-family:var(--font-display);font-size:12px;font-weight:600;background:rgba(255,255,255,.16);padding:6px 14px;border-radius:999px;color:#fff;}
+.badge-pulse{animation:badge-pulse 3.2s ease-in-out infinite;}
+@keyframes badge-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,122,69,.45);}50%{box-shadow:0 0 0 6px rgba(255,122,69,0);}}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border-left:4px solid var(--c1);border:2px solid var(--lav-300);border-left-width:4px;transition:transform .25s ease,box-shadow .25s ease;}
+.kpi-card:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(45,47,239,.18);}
+.kpi-card.c2{border-left-color:var(--c3);}
+.kpi-card.c3{border-left-color:var(--c2);}
+.kpi-card.c4{border-left-color:var(--c5);}
+.kpi-card.c5{border-left-color:var(--positive);}
+.kpi-card.c6{border-left-color:var(--negative);}
+.kpi-label{font-family:var(--font-display);font-size:11.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600;}
+.kpi-value{font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--ink);}
+.kpi-sub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+
+.section-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--purple-deep);margin:26px 0 12px;display:flex;align-items:center;gap:10px;}
+.section-title .tag{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--orange-soft);color:var(--orange-text);padding:3px 10px;border-radius:999px;}
+
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.chart-container{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);}
+.chart-container h3{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px;}
+.chart-container canvas{max-height:280px;}
+.chart-container.wide{grid-column:span 2;}
+@media (max-width:820px){.chart-container.wide{grid-column:span 1;}}
+
+.insight-box{background:var(--orange-soft);border:1px solid var(--orange-dark);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--orange-text);margin-bottom:var(--gap);}
+.insight-box b{color:var(--orange-deep);}
+
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--gap);margin-bottom:var(--gap);}
+.showcase-card{background:var(--bg-card);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft);border-top:3px solid var(--purple-deep);border-left:2px solid var(--lav-300);border-right:2px solid var(--lav-300);border-bottom:2px solid var(--lav-300);transition:transform .25s ease,box-shadow .25s ease;}
+.showcase-card:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(45,47,239,.16);}
+.showcase-card .name{font-family:var(--font-display);font-weight:700;font-size:14px;margin-bottom:2px;color:var(--ink);}
+.showcase-card .ma{font-size:11px;color:var(--text-secondary);margin-bottom:8px;}
+.showcase-card .desc{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;min-height:64px;}
+.showcase-card a{font-family:var(--font-display);font-size:12px;color:var(--purple-mid);text-decoration:none;font-weight:700;}
+.showcase-card a:hover{text-decoration:underline;color:var(--purple-deep);}
+.showcase-card .noaccess{font-size:12px;color:var(--text-secondary);font-style:italic;}
+
+.table-section{background:var(--bg-card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-soft);border:2px solid var(--lav-300);overflow-x:auto;margin-bottom:var(--gap);}
+.table-section h3{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:12px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.filters select, .filters input{padding:8px 14px;border:2px solid var(--lav-300);border-radius:999px;font-size:12.5px;font-family:var(--font-body);background:#fff;color:var(--ink);transition:border-color .2s ease;}
+.filters select:focus, .filters input:focus{outline:none;border-color:var(--purple-mid);}
+.filters input{min-width:180px;}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table thead th{text-align:left;padding:9px 10px;border-bottom:2px solid var(--lav-300);color:var(--text-secondary);font-family:var(--font-display);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;}
+.data-table thead th:hover{color:var(--purple-deep);background:var(--lav-100);}
+.data-table tbody td{padding:8px 10px;border-bottom:1px solid var(--lav-200);vertical-align:top;}
+.data-table tbody tr:hover{background:var(--lav-100);}
+.pill{display:inline-block;font-family:var(--font-display);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;}
+.pill.tot{background:rgba(45,47,239,.12);color:var(--purple-deep);}
+.pill.bs{background:var(--orange-soft);color:var(--orange-text);}
+.pill.absent{background:var(--lav-200);color:var(--ink-soft);}
+.pill.late{background:var(--orange-soft);color:var(--orange-deep);}
+.pill.locked{background:var(--lav-300);color:var(--purple-mid);}
+.pill.none{background:var(--lav-200);color:var(--ink-soft);}
+.loi-chip{display:inline-block;font-size:10.5px;background:var(--lav-200);color:var(--ink-soft);padding:2px 8px;border-radius:999px;margin:1px 3px 1px 0;font-weight:600;}
+.count-info{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
+.spcase-table td, .spcase-table th{padding:8px 10px;}
+
+footer{text-align:center;font-size:12px;color:rgba(255,255,255,.85);padding:22px 0;background:var(--purple-deep);border-radius:var(--radius);margin-top:8px;}
+
+
+/* ---------- dashboard nav (Trang chu / buoi lien truoc - lien sau) ---------- */
+.dash-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:var(--gap);}
+.dash-nav-home{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--purple-deep);background:var(--bg-card);border:2px solid var(--lav-300);padding:8px 16px;border-radius:999px;text-decoration:none;transition:transform .2s ease,border-color .2s ease,background .2s ease;}
+.dash-nav-home:hover{border-color:var(--purple-deep);background:var(--lav-100);transform:translateY(-2px);}
+.dash-nav-adjacent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.dash-nav-btn{font-family:var(--font-display);font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:999px;text-decoration:none;white-space:nowrap;transition:transform .2s ease,background .2s ease;}
+.dash-nav-btn.enabled{background:var(--purple-deep);color:#fff;}
+.dash-nav-btn.enabled:hover{background:var(--purple-mid);transform:translateY(-2px);}
+.dash-nav-btn.disabled{background:var(--lav-200);color:var(--ink-soft);cursor:default;pointer-events:none;}
+.dash-nav-current{font-family:var(--font-display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);padding:0 4px;}
+/* ---------- ghi chu buoi bonus ---------- */
+.note-box{background:var(--lav-100);border:2px dashed var(--purple-soft);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--ink-soft);margin-bottom:var(--gap);}
+.note-box b{color:var(--purple-deep);}
+
+
+</style>
+</head>
+<body>
+<div class="marquee">
+  <div class="marquee__track">
+    <span>Nh&#243;m 6 <span class="accent">&#9733;</span> DASHBOARD BU&#7892;I 5 <span class="accent">&#9733;</span> BONUS APP SCRIPT x GEMINI <span class="accent">&#9733;</span> AI AGENT K1 <span class="accent">&#9733;</span></span>
+    <span>Nh&#243;m 6 <span class="accent">&#9733;</span> DASHBOARD BU&#7892;I 5 <span class="accent">&#9733;</span> BONUS APP SCRIPT x GEMINI <span class="accent">&#9733;</span> AI AGENT K1 <span class="accent">&#9733;</span></span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="dash-nav">
+    <a href="index.html" class="dash-nav-home">&#127968; Trang ch&#7911;</a>
+    <div class="dash-nav-adjacent">
+      <a href="dashboard-bt4-nhom6.html" class="dash-nav-btn enabled">&larr; Bu&#7893;i 4</a>
+      <span class="dash-nav-current">Bu&#7893;i 5 / 7</span>
+      <a href="dashboard-bt6-nhom6.html" class="dash-nav-btn enabled">Bu&#7893;i 6 &rarr;</a>
+    </div>
+  </div>
+
+  <header class="top">
+    <h1>Dashboard BTVN Bu&#7893;i 5 &mdash; Nh&#243;m 6 &middot; Bonus: Vibe code App Script c&ugrave;ng Gemini &amp; B&#7897; h&#7891; s&#417; thi&#7871;t k&#7871;</h1>
+    <p>Ngu&#7891;n: Google Sheet s&#7889;ng &quot;Dashboard Data B5&quot; (Nh&#243;m 6) &middot; Ph&#7841;m vi: ch&#7881; Bu&#7893;i 5 &middot; <span id="last-updated">&#272;ang t&#7843;i d&#7919; li&#7879;u&hellip;</span></p>
+    <div class="badge-row">
+      <span class="badge" id="badge-total">&ndash; h&#7885;c vi&#234;n</span>
+      <span class="badge" id="badge-graded">&ndash; b&#224;i &#273;&#227; ch&#7845;m</span>
+      <span class="badge" id="badge-good">&ndash; b&#224;i &#273;&#7841;t m&#7909;c ti&#234;u</span>
+      <span class="badge badge-pulse" id="badge-error1">G&#243;p &#253; #1: &#273;ang t&#237;nh&hellip;</span>
+    </div>
+  </header>
+  <div class="note-box">
+    <b>V&igrave; sao c&oacute; bu&#7893;i n&agrave;y?</b> &#272;&uacute;ng l&#7883;ch bu&#7893;i 5, Claude g&#7863;p s&#7921; c&#7889; gi&aacute;n &#273;o&#7841;n tr&ecirc;n to&agrave;n c&#7847;u n&ecirc;n b&agrave;i gi&#7843;ng &#273;&#432;&#7907;c &#273;i&#7873;u ch&#7881;nh: l&#7899;p chuy&#7875;n sang <b>vibe code App Script th&ocirc;ng qua Gemini</b>, &#273;&#7847;u ra l&agrave; m&#7897;t file dashboard HTML / web app ch&#7841;y th&#7853;t, song song v&#7899;i vi&#7879;c ho&agrave;n thi&#7879;n <b>b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871; (design.md + product.md + logo)</b> l&agrave;m &#273;&#7847;u v&agrave;o cho bu&#7893;i 6. V&igrave; v&#7853;y b&agrave;i n&#7897;p c&#7911;a bu&#7893;i n&agrave;y c&oacute; hai d&#7841;ng: <b>web app Apps Script</b> (link <code>script.google.com/&hellip;/exec</code>) v&agrave; <b>t&agrave;i li&#7879;u h&#7891; s&#417; thi&#7871;t k&#7871;</b>. Ti&ecirc;u ch&iacute; x&#7871;p lo&#7841;i b&ecirc;n d&#432;&#7899;i b&aacute;m theo b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871; &mdash; ph&#7847;n App Script &#273;&#432;&#7907;c vinh danh ri&ecirc;ng &#7903; m&#7909;c b&agrave;i ti&ecirc;u bi&#7875;u.
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">T&#7893;ng h&#7885;c vi&#234;n</div>
+      <div class="kpi-value" id="kpi-total">&ndash;</div>
+      <div class="kpi-sub">Nh&#243;m 6</div>
+    </div>
+    <div class="kpi-card c2">
+      <div class="kpi-label">&#272;i&#7875;m danh c&#243; m&#7863;t</div>
+      <div class="kpi-value" id="kpi-attend">&ndash;</div>
+      <div class="kpi-sub" id="kpi-attend-sub">&ndash;</div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-label">&#272;&#227; n&#7897;p b&#224;i</div>
+      <div class="kpi-value" id="kpi-submit">&ndash;</div>
+      <div class="kpi-sub" id="kpi-submit-sub">&ndash;</div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-label">&#272;&#227; ch&#7845;m (feedback)</div>
+      <div class="kpi-value" id="kpi-graded">&ndash;</div>
+      <div class="kpi-sub" id="kpi-graded-sub">&ndash;</div>
+    </div>
+    <div class="kpi-card c5">
+      <div class="kpi-label">&#272;&#7911; b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871;</div>
+      <div class="kpi-value" id="kpi-good">&ndash;</div>
+      <div class="kpi-sub" id="kpi-good-sub">trong s&#7889; &#273;&#227; ch&#7845;m</div>
+    </div>
+    <div class="kpi-card c6">
+      <div class="kpi-label">C&#242;n thi&#7871;u tr&#7909;c h&#7891; s&#417;</div>
+      <div class="kpi-value" id="kpi-bad">&ndash;</div>
+      <div class="kpi-sub" id="kpi-bad-sub">trong s&#7889; &#273;&#227; ch&#7845;m</div>
+    </div>
+  </div>
+
+  <div class="insight-box" id="insight-main"><b>Insight ch&#237;nh:</b> &#273;ang t&#237;nh&hellip;</div>
+
+  <div class="section-title">&#128202; &#272;i&#7875;m danh &amp; t&#236;nh tr&#7841;ng n&#7897;p b&#224;i <span class="tag">Bu&#7893;i 5</span></div>
+  <div class="chart-row">
+    <div class="chart-container">
+      <h3>&#272;i&#7875;m danh Bu&#7893;i 5</h3>
+      <canvas id="chart-attend"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>T&#236;nh tr&#7841;ng n&#7897;p BTVN 5</h3>
+      <canvas id="chart-submit"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>X&#7871;p lo&#7841;i trong s&#7889; b&#224;i &#273;&#227; ch&#7845;m</h3>
+      <canvas id="chart-grade"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title">&#128269; &#272;i&#7875;m c&#7847;n c&#7843;i thi&#7879;n th&#432;&#7901;ng g&#7863;p trong b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871; <span class="tag" id="tag-badcount">&ndash; b&#224;i &#273;&#227; ch&#7845;m</span></div>
+  <div class="chart-row">
+    <div class="chart-container wide">
+      <h3>T&#7847;n su&#7845;t c&#225;c g&#243;p &#253; &quot;G&#7907;i &#253; l&#224;m t&#7889;t h&#417;n&quot; (t&#237;nh tr&#234;n <span id="err-denom">&ndash;</span> b&#224;i &#273;&#227; ch&#7845;m)</h3>
+      <canvas id="chart-errors"></canvas>
+    </div>
+  </div>
+  <div class="insight-box" id="insight-errors"><b>G&#243;p &#253; ph&#7893; bi&#7871;n nh&#7845;t:</b> &#273;ang t&#237;nh&hellip;</div>
+
+  <div class="section-title">&#127942; B&agrave;i ti&ecirc;u bi&#7875;u &mdash; h&#7891; s&#417; thi&#7871;t k&#7871; &amp; web app App Script <span class="tag" id="tag-goodcount">&ndash; b&#224;i</span></div>
+  <div class="showcase-grid" id="showcase-grid"></div>
+
+  <div class="section-title">&#9888;&#65039; Tr&#432;&#7901;ng h&#7907;p c&#7847;n tr&#7907; gi&#7843;ng x&#7917; l&#253; ri&#234;ng</div>
+  <div class="table-section">
+    <table class="data-table spcase-table">
+      <thead><tr><th>M&#227; HV</th><th>H&#7885; t&#234;n</th><th>Lo&#7841;i v&#7845;n &#273;&#7873;</th><th>Ghi ch&#250;</th></tr></thead>
+      <tbody id="spcase-body"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title">&#128203; Danh s&#225;ch chi ti&#7871;t to&#224;n b&#7897; Nh&#243;m 6 <span class="tag" id="tag-studentcount">&ndash; h&#7885;c vi&#234;n</span></div>
+  <div class="table-section">
+    <div class="filters">
+      <input type="text" id="f-search" placeholder="T&#236;m theo m&#227; HV ho&#7863;c t&#234;n...">
+      <select id="f-diemdanh" onchange="applyFilters()">
+        <option value="all">T&#7845;t c&#7843; &#273;i&#7875;m danh</option>
+        <option value="C&#243; m&#7863;t">C&#243; m&#7863;t</option>
+        <option value="V&#7855;ng">V&#7855;ng</option>
+      </select>
+      <select id="f-tinhtrang" onchange="applyFilters()">
+        <option value="all">T&#7845;t c&#7843; t&#236;nh tr&#7841;ng n&#7897;p</option>
+        <option value="&#272;&#227; feedback">&#272;&#227; feedback</option>
+        <option value="&#272;&#227; n&#7897;p">&#272;&#227; n&#7897;p (ch&#432;a ch&#7845;m)</option>
+        <option value="N&#7897;p ch&#7853;m">N&#7897;p ch&#7853;m</option>
+        <option value="Ch&#432;a m&#7903; quy&#7873;n truy c&#7853;p">Ch&#432;a m&#7903; quy&#7873;n truy c&#7853;p</option>
+        <option value="none">Ch&#432;a n&#7897;p</option>
+      </select>
+      <select id="f-xeploai" onchange="applyFilters()">
+        <option value="all">T&#7845;t c&#7843; x&#7871;p lo&#7841;i</option>
+        <option value="&#272;&#7911; b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871;">&#272;&#7911; b&#7897; h&#7891; s&#417; thi&#7871;t k&#7871;</option>
+        <option value="C&#242;n thi&#7871;u tr&#7909;c h&#7891; s&#417;">C&#242;n thi&#7871;u tr&#7909;c h&#7891; s&#417;</option>
+      </select>
+    </div>
+    <div class="count-info" id="table-count"></div>
+    <table class="data-table" id="main-table">
+      <thead><tr>
+        <th data-field="ma">M&#227; HV</th>
+        <th data-field="ten">H&#7885; t&#234;n</th>
+        <th data-field="diemdanh">&#272;i&#7875;m danh</th>
+        <th data-field="tinhtrang">T&#236;nh tr&#7841;ng n&#7897;p</th>
+        <th data-field="xeploai">X&#7871;p lo&#7841;i</th>
+        <th>&#272;i&#7875;m c&#7847;n c&#7843;i thi&#7879;n</th>
+        <th>B&#224;i l&#224;m</th>
+      </tr></thead>
+      <tbody id="main-table-body"></tbody>
+    </table>
+  </div>
+
+  <footer>Dashboard t&#7841;o t&#7921; &#273;&#7897;ng t&#7915; d&#7919; li&#7879;u ch&#7845;m BTVN Bu&#7893;i 5 &middot; Nh&#243;m 6 &middot; Kho&#225; X&#226;y tr&#7907; l&#253; c&#225; nh&#226;n AI Agent K1</footer>
+</div>
+
+<script>
+// ============================================================================
+// Dashboard Buoi 5 - Nhom 6 - khoa "Xay tro ly ca nhan AI Agent K1".
+// Kien truc REALTIME: khong nhung du lieu tinh. Moi lan mo trang, trang fetch
+// truc tiep CSV_URL (tab "Dashboard Data B5" trong file sheet dashboard cua
+// tro giang, da Publish to web), roi tu phan loai + dem cac diem can cai thien.
+//
+// LUU Y ve rubric: feedback buoi 5 co cau truc 2 phan
+//   "Dat / lam tot:"  va  "Goi y lam tot hon:"
+// nen KHONG dung bo WEAKNESS_MARKERS cua buoi 1-4 (moi bai deu co phan goi y,
+// dung bo cu se xep tat ca vao "Can bo sung"). Thay vao do:
+//   - Xep loai  : doc phan "Dat / lam tot" -> co dat muc tieu cot loi cua buoi?
+//   - Diem can cai thien: doc phan "Goi y lam tot hon" -> doi chieu TAXONOMY.
+// Mau so cua phan "diem can cai thien" la SO BAI DA CHAM (graded_for_errors),
+// khop dung tap bai da cong vao tu so -> khong bao gio ra % vuot 100%.
+// ============================================================================
+
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_WcRZOd5VMgcsR7ZAApc3iGVDEqUaMFiYPJkcYL0bRHtHZReWj95ks-e11jKjFQ/pub?gid=1644290597&single=true&output=csv";
+const BUOI = 5;
+const LBL_DAT = "Đủ bộ hồ sơ thiết kế";
+const LBL_CHUA = "Còn thiếu trục hồ sơ";
+
+// Dau hieu (da bo dau) cho thay bai DAT muc tieu cot loi cua buoi, tim trong
+// phan "Dat / lam tot" cua feedback.
+const GOOD_RULES = [["design.md", "product.md"], ["du bo ho so"], ["day du ca hai"]];
+
+// Cac diem can cai thien thuong gap, tim trong phan "Goi y lam tot hon".
+const TAXONOMY = [
+  [
+    "Thiếu mã màu hex / tên font cụ thể",
+    [
+      "ma mau hex",
+      "mau hex",
+      "ten font"
+    ]
+  ],
+  [
+    "Thiếu hoặc sơ sài design.md (quy ước hình thức)",
+    [
+      "design.md"
+    ]
+  ],
+  [
+    "Thiếu hoặc sơ sài product.md (sản phẩm làm gì, cho ai)",
+    [
+      "product.md"
+    ]
+  ],
+  [
+    "Chưa có / chưa mô tả logo thương hiệu",
+    [
+      "logo"
+    ]
+  ],
+  [
+    "Link khoá quyền – cần dán nội dung thẳng vào bài",
+    [
+      "chua the mo duoc",
+      "chua xem duoc",
+      "noi dung truc tiep",
+      "dan them"
+    ]
+  ],
+  [
+    "Chưa chạy thử, còn bỏ trống phần thực hành",
+    [
+      "chua kip chay",
+      "de trong"
+    ]
+  ],
+  [
+    "Chưa nối với brief / định vị buổi trước",
+    [
+      "brief",
+      "dinh vi"
+    ]
+  ]
+];
+
+// Bai tieu bieu - tro giang chon tay, "diem_nhan" la nhan xet dinh tinh.
+const SHOWCASE = [
+  {
+    "ma": "K489",
+    "ten": "Nguyễn Ngọc Đạt",
+    "nhan": "Đủ bộ hồ sơ thiết kế",
+    "diem_nhan": "Nộp đủ cả hai file design.md và product.md, lại có sẵn logo thương hiệu — bộ hồ sơ hoàn chỉnh nhất nhóm, đủ điều kiện chuyển thẳng sang giai đoạn dựng trang ở buổi sau.",
+    "link": null
+  },
+  {
+    "ma": "K507",
+    "ten": "Đào Mai Anh",
+    "nhan": "Đủ bộ hồ sơ thiết kế",
+    "diem_nhan": "Đủ cả hai trục: design.md có thông số kỹ thuật cụ thể (không chỉ mô tả cảm tính), product.md mô tả rõ sản phẩm. Chỉ còn thiếu hình logo là trọn bộ.",
+    "link": "https://docs.google.com/document/d/1xFm3V68h5B1GQ6GiHLYwcV3ea6XyIZVICWR2hRC74_4/edit?usp=sharing"
+  },
+  {
+    "ma": "K526",
+    "ten": "Trần Hoàng Anh Thư",
+    "nhan": "Đủ bộ hồ sơ thiết kế",
+    "diem_nhan": "Nộp đủ DESIGN.md và PRODUCT.md, kèm luôn link web tham khảo — cho thấy đã hình dung được sản phẩm cuối trước khi bắt tay dựng trang.",
+    "link": "https://docs.google.com/document/d/1wLJ9C_LJa570JVIACJaDdGWcjo6G5db8Oh0jd018HZ0/edit?usp=sharing"
+  },
+  {
+    "ma": "K555",
+    "ten": "Đỗ Bích Ngọc",
+    "nhan": "Đủ bộ hồ sơ thiết kế",
+    "diem_nhan": "Cung cấp đầy đủ cả design.md và product.md, đáp ứng đúng yêu cầu cốt lõi của bộ hồ sơ thiết kế — tài liệu này dùng lại được cho mọi lần thiết kế sau.",
+    "link": "https://claude.ai/code/artifact/a035b1cf-fde4-4b59-9c0f-819b4288b9e1"
+  },
+  {
+    "ma": "K580",
+    "ten": "Nguyễn Thị Duyên",
+    "nhan": "Điểm nhấn: design.md chi tiết nhất nhóm",
+    "diem_nhan": "design.md chốt tới từng thông số: mã màu tím indigo #4F46E5, xanh ngọc #14B8A6, spacing hệ 8px, bo góc 14–20px, font tiêu đề Plus Jakarta. Đây là mẫu quy ước hình thức đáng tham khảo cho cả nhóm (còn thiếu trục product.md).",
+    "link": "https://docs.google.com/document/d/1hZQP7oOmVLGcKtsNoVYzT1hjoszFBIdJN35RyY7W1eA/edit?tab=t.0"
+  },
+  {
+    "ma": "K482",
+    "ten": "Trần Ngọc Thuý Vy",
+    "nhan": "Bonus: App Script chạy thật",
+    "diem_nhan": "Sản phẩm của phần bonus vibe code: một web app Google Apps Script đã deploy, mở được bằng link /exec. Đây là đúng đầu ra mà buổi bonus nhắm tới — biến ý tưởng thành công cụ chạy được, không dừng ở bản mô tả.",
+    "link": "https://script.google.com/macros/s/AKfycbxYewZAALRg9l9COmt62u5p8lWAeX_K-ak5qX7movD_F4sCJ9ifxpEFTDnso-RrxR_UAA/exec"
+  },
+  {
+    "ma": "K542",
+    "ten": "Huỳnh Nhân Khánh",
+    "nhan": "Bonus: App Script chạy thật",
+    "diem_nhan": "Web app Apps Script cho bài toán Quản lý kinh doanh văn phòng phẩm — đã deploy và mở được. Hướng đi sản phẩm rõ ràng ngay từ tên gọi, phần còn thiếu chỉ là chốt mã màu và font trong design.md.",
+    "link": "https://script.google.com/macros/s/AKfycbwdYTmHkVyxpU4o-t5UdMHdC45NRSDJsKuhS19XIWftrkij9Cx_rNeWMUZdeAMGoJ623w/exec"
+  }
+];
+
+function stripAccents(s){
+  if(s===null||s===undefined) return '';
+  s = String(s).replace(/đ/g,'d').replace(/Đ/g,'D');
+  return s.normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase();
+}
+
+// Tach feedback thanh 2 phan: khen ("good") va goi y ("tip").
+function splitFeedback(text){
+  const t = String(text||'');
+  const m = t.match(/Gợi\s*ý\s*làm\s*tốt\s*hơn/i);
+  if(!m) return { good: t, tip: '' };
+  const i = t.indexOf(m[0]);
+  return { good: t.slice(0, i), tip: t.slice(i) };
+}
+
+function classifyXepLoai(feedback){
+  if(!feedback) return null;
+  const good = stripAccents(splitFeedback(feedback).good);
+  const hit = GOOD_RULES.some(rule => rule.every(p => good.includes(p)));
+  return hit ? LBL_DAT : LBL_CHUA;
+}
+
+function extractErrors(feedback){
+  if(!feedback) return [];
+  const tip = stripAccents(splitFeedback(feedback).tip);
+  if(!tip) return [];
+  return TAXONOMY.filter(([, patterns]) => patterns.some(p => tip.includes(p))).map(([label]) => label);
+}
+
+function cleanLink(v){
+  const s = String(v||'').trim();
+  if(!s) return null;
+  if(s.indexOf('#REF') === 0 || s === '#N/A' || s === '-') return null;
+  return /^https?:\/\//i.test(s) ? s : 'https://' + s;
+}
+
+function buildDataset(rawRows){
+  const diemDanhCounter = {};
+  const tinhTrangCounter = {};
+  const xepLoaiCounter = {};
+  const loiCounter = {};
+  const specialCases = [];
+  const students = [];
+  let gradedForErrors = 0;
+
+  rawRows.forEach(row => {
+    const ma = String(row.ma||'').trim();
+    if(!ma) return;
+    const ten = String(row.ten||'').trim();
+    const diemdanh = String(row.diemdanh||'').trim() || null;
+    const link = cleanLink(row.link);
+    let tinhtrang = String(row.tinhtrang||'').trim() || null;
+    const feedback = String(row.feedback||'').trim() || null;
+
+    const ddKey = diemdanh || 'Không rõ';
+    diemDanhCounter[ddKey] = (diemDanhCounter[ddKey]||0) + 1;
+
+    if(!tinhtrang && feedback) tinhtrang = 'Đã feedback';
+
+    // BAN VA #1: bai "Chua mo quyen truy cap" chua he duoc cham -> khong suy
+    // doan xep loai tu placeholder trong cot feedback.
+    let xeploai = null;
+    let loi = [];
+    const isUngraded = tinhtrang === 'Chưa mở quyền truy cập';
+    if(feedback && !isUngraded){
+      xeploai = classifyXepLoai(feedback);
+      gradedForErrors += 1;   // BAN VA #3: mau so khop dung tap bai da cong vao tu so
+      loi = extractErrors(feedback);
+      loi.forEach(l => { loiCounter[l] = (loiCounter[l]||0) + 1; });
+    }
+
+    const ttKey = tinhtrang || 'None';
+    tinhTrangCounter[ttKey] = (tinhTrangCounter[ttKey]||0) + 1;
+    if(xeploai) xepLoaiCounter[xeploai] = (xepLoaiCounter[xeploai]||0) + 1;
+
+    if(tinhtrang === 'Nộp chậm' || isUngraded){
+      specialCases.push({
+        ma, ten, loai: tinhtrang,
+        ghi_chu: tinhtrang === 'Nộp chậm'
+          ? 'Nộp sau hạn quy định'
+          : 'Link chưa cấp quyền xem, trợ giảng không mở được để chấm',
+      });
+    }
+
+    students.push({ ma, ten, diemdanh, link, tinhtrang, xeploai, loi });
+  });
+
+  const loiSorted = Object.fromEntries(Object.entries(loiCounter).sort((a,b) => b[1]-a[1]));
+
+  const summary = {
+    total_students: students.length,
+    diem_danh: diemDanhCounter,
+    tinh_trang_nop: tinhTrangCounter,
+    xep_loai_da_cham: xepLoaiCounter,
+    loi_thuong_gap: loiSorted,
+    graded_for_errors: gradedForErrors,
+  };
+  return { summary, students, showcase: SHOWCASE, special_cases: specialCases };
+}
+
+let DATA = null;
+
+function showError(msg){
+  document.getElementById('last-updated').textContent = 'Lỗi tải dữ liệu';
+  document.getElementById('insight-main').innerHTML =
+    '<b>Không tải được dữ liệu sống.</b> ' + msg +
+    ' Kiểm tra lại link Publish to web của tab "Dashboard Data B' + BUOI + '" (Tệp → Chia sẻ → Xuất bản lên web), hoặc thử tải lại trang.';
+}
+
+function init(){
+  Papa.parse(CSV_URL, {
+    download: true, header: true, skipEmptyLines: true,
+    complete: function(results){
+      if(!results.data || !results.data.length){ showError('CSV trả về rỗng.'); return; }
+      DATA = buildDataset(results.data);
+      document.getElementById('last-updated').textContent =
+        'Cập nhật lần cuối: ' + new Date().toLocaleString('vi-VN');
+      renderKPIs(); renderCharts(); renderShowcase(); renderSpecialCases(); renderTable();
+    },
+    error: function(err){ showError(err && err.message ? err.message : String(err)); },
+  });
+}
+
+const COLORS = ['#6A5CFF','#FF7A45','#2D2FEF','#C24418','#8F84FF','#55507A','#B2A4EF'];
+function pct(n, d){ return d ? ((n/d)*100).toFixed(1) : '0.0'; }
+
+function renderKPIs(){
+  const s = DATA.summary;
+  const total = s.total_students;
+  const attend = s.diem_danh['Có mặt']||0;
+  const graded = s.tinh_trang_nop['Đã feedback']||0;
+  const late = s.tinh_trang_nop['Nộp chậm']||0;
+  const locked = s.tinh_trang_nop['Chưa mở quyền truy cập']||0;
+  const submittedNotGraded = s.tinh_trang_nop['Đã nộp']||0;
+  const submitted = graded + late + locked + submittedNotGraded;
+  const good = s.xep_loai_da_cham[LBL_DAT]||0;
+  const bad = s.xep_loai_da_cham[LBL_CHUA]||0;
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-attend').textContent = attend;
+  document.getElementById('kpi-attend-sub').textContent = pct(attend,total)+'% tổng · Vắng '+(s.diem_danh['Vắng']||0);
+  document.getElementById('kpi-submit').textContent = submitted;
+  document.getElementById('kpi-submit-sub').textContent = pct(submitted,total)+'% tổng · '+pct(submitted,attend)+'% trong số có mặt';
+  document.getElementById('kpi-graded').textContent = graded;
+  document.getElementById('kpi-graded-sub').textContent = pct(graded,total)+'% tổng · '+pct(graded,submitted)+'% trong số đã nộp';
+  document.getElementById('kpi-good').textContent = good;
+  document.getElementById('kpi-good-sub').textContent = pct(good,graded)+'% trong số đã chấm';
+  document.getElementById('kpi-bad').textContent = bad;
+  document.getElementById('kpi-bad-sub').textContent = pct(bad,graded)+'% trong số đã chấm';
+
+  const notSubmittedTotal = total - submitted;
+  const attendNotSubmitted = Math.max(0, attend - submitted);
+  document.getElementById('insight-main').innerHTML =
+    '<b>Insight chính:</b> '+attend+'/'+total+' học viên ('+pct(attend,total)+'%) có mặt Buổi '+BUOI+
+    ', '+submitted+' bài được nộp ('+pct(submitted,attend)+'% trong số có mặt) — còn '+
+    attendNotSubmitted+' học viên có mặt nhưng chưa nộp (tổng chưa nộp: '+notSubmittedTotal+'). '+
+    'Trong '+graded+' bài đã chấm, '+good+' bài ('+pct(good,graded)+'%) '+LBL_DAT.toLowerCase()+
+    ', '+bad+' bài ('+pct(bad,graded)+'%) '+LBL_CHUA.toLowerCase()+'. Ri&ecirc;ng ph&#7847;n bonus vibe code, nh&oacute;m c&oacute; 2 web app Apps Script &#273;&atilde; deploy v&agrave; m&#7903; &#273;&#432;&#7907;c b&#7857;ng link /exec.';
+
+  document.getElementById('badge-total').textContent = total+' học viên';
+  document.getElementById('badge-graded').textContent = graded+' bài đã chấm';
+  document.getElementById('badge-good').textContent = good+' bài '+LBL_DAT.toLowerCase();
+  document.getElementById('tag-studentcount').textContent = total+' học viên';
+  document.getElementById('tag-goodcount').textContent = DATA.showcase.length+' bài được chọn';
+  document.getElementById('tag-badcount').textContent = s.graded_for_errors+' bài đã chấm';
+  document.getElementById('err-denom').textContent = s.graded_for_errors;
+}
+
+function renderCharts(){
+  const s = DATA.summary;
+  new Chart(document.getElementById('chart-attend'), {
+    type:'doughnut',
+    data:{ labels:['Có mặt','Vắng'], datasets:[{ data:[s.diem_danh['Có mặt']||0, s.diem_danh['Vắng']||0], backgroundColor:[COLORS[2],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const tt = s.tinh_trang_nop;
+  new Chart(document.getElementById('chart-submit'), {
+    type:'doughnut',
+    data:{ labels:['Đã feedback','Nộp chậm','Chưa mở quyền truy cập','Đã nộp (chưa chấm)','Chưa nộp'],
+      datasets:[{ data:[tt['Đã feedback']||0, tt['Nộp chậm']||0, tt['Chưa mở quyền truy cập']||0, tt['Đã nộp']||0, tt['None']||0],
+        backgroundColor:[COLORS[2],COLORS[1],COLORS[4],COLORS[6],'#D6CEF7'], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:10,font:{size:10.5}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+((c.parsed/t)*100).toFixed(1)+'%)'; } } } } }
+  });
+
+  const gl = s.xep_loai_da_cham;
+  new Chart(document.getElementById('chart-grade'), {
+    type:'doughnut',
+    data:{ labels:[LBL_DAT, LBL_CHUA], datasets:[{ data:[gl[LBL_DAT]||0, gl[LBL_CHUA]||0], backgroundColor:[COLORS[2],COLORS[3]], borderColor:'#fff', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true,padding:14,font:{size:11}}},
+        tooltip:{ callbacks:{ label:(c)=>{ const t=c.dataset.data.reduce((a,b)=>a+b,0); return c.label+': '+c.parsed+' ('+(t?((c.parsed/t)*100).toFixed(1):'0.0')+'%)'; } } } } }
+  });
+
+  // BAN VA #3: mau so la so bai DA CHAM (khop dung tap da cong vao tu so),
+  // KHONG dung `bad` (chi dem bai chua dat) -> khong the ra % vuot 100%.
+  const denom = s.graded_for_errors;
+  const errEntries = Object.entries(s.loi_thuong_gap).sort((a,b)=>b[1]-a[1]);
+  new Chart(document.getElementById('chart-errors'), {
+    type:'bar',
+    data:{ labels:errEntries.map(e=>e[0]), datasets:[{ label:'Số bài được góp ý', data:errEntries.map(e=>e[1]), backgroundColor: COLORS[0]+'CC', borderRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=> c.parsed.x+' bài ('+pct(c.parsed.x,denom)+'% trong số bài đã chấm)' } } },
+      scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  });
+
+  const errBox = document.getElementById('insight-errors');
+  if(errEntries.length){
+    const top = errEntries[0], second = errEntries[1];
+    let html = '<b>Góp ý phổ biến nhất:</b> '+top[1]+'/'+denom+' bài đã chấm ('+pct(top[1],denom)+'%) được nhắc về <b>'+top[0]+'</b>.';
+    if(second) html += ' Kế tiếp là <b>'+second[0]+'</b> ('+second[1]+' bài, '+pct(second[1],denom)+'%).';
+    errBox.innerHTML = html;
+  } else {
+    errBox.innerHTML = '<b>Góp ý phổ biến nhất:</b> chưa có bài nào được chấm để thống kê.';
+  }
+  document.getElementById('badge-error1').textContent = errEntries.length
+    ? ('Góp ý #1: '+errEntries[0][0]+' ('+pct(errEntries[0][1],denom)+'%)') : 'Góp ý #1: —';
+}
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderShowcase(){
+  document.getElementById('showcase-grid').innerHTML = DATA.showcase.map(s => `
+    <div class="showcase-card">
+      <div class="name">${esc(s.ten)}</div>
+      <div class="ma">${esc(s.ma)} &middot; ${esc(s.nhan)}</div>
+      <div class="desc">${esc(s.diem_nhan)}</div>
+      ${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Xem b&agrave;i l&agrave;m &rarr;</a>` : `<span class="noaccess">Link b&agrave;i n&#7897;p kh&ocirc;ng m&#7903; c&ocirc;ng khai</span>`}
+    </div>`).join('');
+}
+
+function renderSpecialCases(){
+  const body = document.getElementById('spcase-body');
+  if(!DATA.special_cases.length){
+    body.innerHTML = '<tr><td colspan="4" style="color:var(--text-secondary)">Kh&ocirc;ng c&oacute; tr&#432;&#7901;ng h&#7907;p n&agrave;o c&#7847;n x&#7917; l&yacute; ri&ecirc;ng.</td></tr>';
+    return;
+  }
+  body.innerHTML = DATA.special_cases.map(c => `
+    <tr>
+      <td>${esc(c.ma)}</td>
+      <td>${esc(c.ten)}</td>
+      <td><span class="pill ${c.loai==='Nộp chậm'?'late':'locked'}">${esc(c.loai)}</span></td>
+      <td>${esc(c.ghi_chu)}</td>
+    </tr>`).join('');
+}
+
+function pillFor(field, value){
+  if(field==='diemdanh'){
+    return value==='Có mặt' ? `<span class="pill tot">C&oacute; m&#7863;t</span>` : `<span class="pill absent">V&#7855;ng</span>`;
+  }
+  if(field==='tinhtrang'){
+    if(value==='Đã feedback') return `<span class="pill tot">Đã feedback</span>`;
+    if(value==='Nộp chậm') return `<span class="pill late">Nộp chậm</span>`;
+    if(value==='Chưa mở quyền truy cập') return `<span class="pill locked">Khoá quyền</span>`;
+    if(value==='Đã nộp') return `<span class="pill late">Đã nộp (chưa chấm)</span>`;
+    return `<span class="pill none">Chưa nộp</span>`;
+  }
+  if(field==='xeploai'){
+    if(value===LBL_DAT) return `<span class="pill tot">${esc(LBL_DAT)}</span>`;
+    if(value===LBL_CHUA) return `<span class="pill bs">${esc(LBL_CHUA)}</span>`;
+    return '—';
+  }
+  return value||'—';
+}
+
+let sortState = { field:null, dir:'asc' };
+
+function getFiltered(){
+  const q = document.getElementById('f-search').value.trim().toLowerCase();
+  const fd = document.getElementById('f-diemdanh').value;
+  const ft = document.getElementById('f-tinhtrang').value;
+  const fx = document.getElementById('f-xeploai').value;
+  return DATA.students.filter(s => {
+    if(q && !(s.ma.toLowerCase().includes(q) || s.ten.toLowerCase().includes(q))) return false;
+    if(fd!=='all' && s.diemdanh!==fd) return false;
+    if(ft!=='all'){
+      if(ft==='none'){ if(s.tinhtrang!==null) return false; }
+      else if(s.tinhtrang!==ft) return false;
+    }
+    if(fx!=='all' && s.xeploai!==fx) return false;
+    return true;
+  });
+}
+
+function renderTable(){
+  let rows = getFiltered();
+  if(sortState.field){
+    rows = [...rows].sort((a,b)=>{
+      let av = a[sortState.field]||''; let bv = b[sortState.field]||'';
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortState.dir==='asc' ? cmp : -cmp;
+    });
+  }
+  document.getElementById('table-count').textContent = 'Hiển thị '+rows.length+' / '+DATA.students.length+' học viên';
+  document.getElementById('main-table-body').innerHTML = rows.map(s => `
+    <tr>
+      <td>${esc(s.ma)}</td>
+      <td>${esc(s.ten)}</td>
+      <td>${pillFor('diemdanh', s.diemdanh)}</td>
+      <td>${pillFor('tinhtrang', s.tinhtrang)}</td>
+      <td>${pillFor('xeploai', s.xeploai)}</td>
+      <td>${s.loi.length ? s.loi.map(l=>`<span class="loi-chip">${esc(l)}</span>`).join('') : ''}</td>
+      <td>${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">Xem</a>` : ''}</td>
+    </tr>`).join('');
+}
+
+function applyFilters(){ renderTable(); }
+
+document.getElementById('f-search').addEventListener('input', applyFilters);
+document.querySelectorAll('#main-table thead th[data-field]').forEach(th => {
+  th.addEventListener('click', () => {
+    const field = th.getAttribute('data-field');
+    if(sortState.field===field){ sortState.dir = sortState.dir==='asc'?'desc':'asc'; }
+    else { sortState.field = field; sortState.dir='asc'; }
+    renderTable();
+  });
+});
+
+init();
+</script>
+</body>
+</html>
